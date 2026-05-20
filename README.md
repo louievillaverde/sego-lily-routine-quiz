@@ -1,30 +1,28 @@
 # Sego Lily Routine Quiz
 
-Sego Lily-branded skincare routine quiz wrapper for the [LP Quiz Suite](https://github.com/louievillaverde/lp-quiz-suite) engine.
+Sego Lily's skincare routine quiz for segolilyskincare.com. Self-contained WordPress plugin — no external dependencies.
+
+Forked from the [LP Quiz Suite](https://github.com/louievillaverde/lp-quiz-suite) canonical quiz reference. Branded for Sego Lily, customized with Holly's product line + voice.
 
 ## What this plugin does
 
-- Brands the quiz plugin as "Sego Lily Routine Quiz" in Holly's WP admin
+- 5-question quiz: name, skin concern, product count, frustration, email
+- Renders inline 2-product recommendation on the same page after submission
+- Syncs lead to Mautic with tags (`quiz-completed`, `retail-quiz-lead`, plus matching skin concern + frustration tags)
 - Auto-creates `/your-routine` page on activation with the quiz embedded
-- Sego Lily-specific heading + subheading on the quiz
-- Holly sign-off on the results screen
+- "Build Your Sego Lily Routine" heading + Holly sign-off on results
 - Self-updates from this repo's GitHub releases
 
-## What it depends on
+## Install
 
-- **LP Quiz Suite** engine plugin (must be installed + activated first). The wrapper shows an admin notice if missing.
+1. Download `sego-lily-routine-quiz.zip` from the [latest release](https://github.com/louievillaverde/sego-lily-routine-quiz/releases/latest)
+2. WP Admin → Plugins → Add New → Upload Plugin → upload the zip → Activate
+3. Settings → Sego Lily Routine Quiz → confirm Mautic credentials (auto-detected from `sego-lily-wholesale` plugin if installed, otherwise enter manually)
+4. `/your-routine` is automatically created and published
 
-## Install order
+## Smoke test after activation
 
-1. Install [LP Quiz Suite v2.0.0+](https://github.com/louievillaverde/lp-quiz-suite/releases/latest)
-2. Activate LP Quiz Suite
-3. Settings → LP Quiz Suite → confirm Mautic credentials (auto-detected from `sego-lily-wholesale` plugin if installed, otherwise enter manually)
-4. Install this plugin (Sego Lily Routine Quiz)
-5. Activate — `/your-routine` page is automatically created and live
-
-## Smoke test
-
-Incognito → `segolilyskincare.com/your-routine` → walk the 5 questions → verify:
+Incognito → `segolilyskincare.com/your-routine` → walk the 5 questions with a test email → verify:
 - Inline 2-product result renders with Holly sign-off
 - "Shop →" links point at real WooCommerce product pages
 - Mautic admin shows new contact with tags: `quiz-completed`, `retail-quiz-lead`, matching skin concern + frustration
@@ -44,4 +42,10 @@ bin/build-release.sh
 gh release create vX.Y.Z dist/sego-lily-routine-quiz.zip --title "vX.Y.Z" --notes "..."
 ```
 
-The plugin's self-updater hits `/releases/latest` every 12 hours and detects new versions. Updates ship through WP admin → Plugins → Update.
+The plugin's self-updater hits `/releases/latest` every 12 hours and pushes updates through WP admin → Plugins → Update.
+
+## Relationship to LP Quiz Suite
+
+[LP Quiz Suite](https://github.com/louievillaverde/lp-quiz-suite) is Lead Piranha's canonical quiz reference, holding the spec + implementations across platforms (WordPress today; Framer / coded sites / Shopify as those clients come online). This plugin is Sego Lily's WordPress fork — fully self-contained, customized for Holly's line, with its own release cycle independent of the master.
+
+When future Lead Piranha clients need a quiz on a different platform (Framer, coded site, Shopify, etc.), their implementation forks from the relevant platform reference in lp-quiz-suite, not from this plugin.
