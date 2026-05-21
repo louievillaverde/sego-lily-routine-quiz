@@ -99,21 +99,27 @@ class SLRQ_Recommendations {
 			'cherry'            => 'Cherry',
 			'unscented'         => 'Unscented (Baby and Mom safe)',
 		);
+		// Unscented is sold as a separate WC product (baby-mom-pure-butter), not a
+		// scent variation of renewal-tallow-butter. Route accordingly.
+		$wc_slug = ( $scent === 'unscented' ) ? 'baby-mom-pure-butter' : 'renewal-tallow-butter';
+		$name    = ( $scent === 'unscented' ) ? 'Baby + Mom Pure Butter' : 'Renewal Tallow Butter';
 		return array(
 			'slug'      => 'renewal-' . $scent,
-			'name'      => 'Renewal Tallow Butter',
+			'name'      => $name,
 			'scent'     => $scents[ $scent ] ?? 'Unscented',
 			'blurb'     => 'Daily moisture. Tone, texture, problem skin.',
-			'shop_url'  => self::shop_url( 'renewal-tallow-butter' ),
+			'shop_url'  => self::shop_url( $wc_slug ),
 			'image_url' => apply_filters( 'lprq_product_image', '', 'renewal', $scent ),
 		);
 	}
 
+	/**
+	 * Build the public product URL. WooCommerce default is /product/{slug}/.
+	 * NOT /shop/product/{slug}/ — that was the bug in v1.0-v1.8 that sent
+	 * customers to a 404.
+	 */
 	private static function shop_url( $product_slug ) {
-		$base = get_option( 'lprq_shop_url', '' );
-		if ( ! $base ) {
-			$base = home_url( '/shop' );
-		}
-		return apply_filters( 'lprq_product_url', trailingslashit( $base ) . 'product/' . $product_slug, $product_slug );
+		$url = home_url( '/product/' . $product_slug . '/' );
+		return apply_filters( 'lprq_product_url', $url, $product_slug );
 	}
 }

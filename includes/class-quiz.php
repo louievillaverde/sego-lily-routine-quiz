@@ -121,15 +121,17 @@ class SLRQ_Quiz {
 		.lprq__primary-product .lprq__product-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
 		.lprq__primary-product .lprq__product-body { flex: 1; }
 		.lprq__primary-product .lprq__product-label { display: inline-block; font-size: 11px; color: #ffffff; background: #386174; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 12px; padding: 4px 10px; border-radius: 4px; }
-		.lprq__primary-product .lprq__product-name { font-size: 24px; font-weight: 600; margin: 0 0 6px; color: #2C2C2C; line-height: 1.25; font-family: Georgia, 'Times New Roman', serif; }
-		.lprq__primary-product .lprq__product-scent { font-size: 15px; color: #8A9499; margin: 0 0 16px; font-style: italic; }
-		.lprq__primary-product .lprq__product-blurb { font-size: 15px; color: #4a5d68; line-height: 1.55; margin: 0 0 22px; }
+		.lprq__primary-product .lprq__product-name { font-size: 24px; font-weight: 600; margin: 0 0 8px; color: #2C2C2C; line-height: 1.25; font-family: Georgia, 'Times New Roman', serif; }
+		.lprq__primary-product .lprq__product-scent { font-size: 15px; color: #8A9499; margin: 0 0 20px; font-style: italic; }
+		.lprq__primary-product .lprq__product-blurb { font-size: 15px; color: #4a5d68; line-height: 1.6; margin: 0 0 28px; }
 		.lprq__primary-product .lprq__product-link { display: inline-block; padding: 13px 22px; font-size: 15px; font-weight: 600; background: #386174; color: #ffffff !important; text-decoration: none; border-radius: 8px; transition: all 0.15s ease; letter-spacing: 0.3px; }
 		.lprq__primary-product .lprq__product-link:hover { background: #2a4a5a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56, 97, 116, 0.25); }
-		.lprq__pairs-note { font-size: 15px; color: #4a5d68; text-align: center; margin: 0 0 32px; padding: 14px 20px; background: #FAFAF7; border-radius: 10px; line-height: 1.5; font-family: Georgia, 'Times New Roman', serif; }
-		.lprq__pairs-note-label { display: block; font-size: 11px; color: #8A9499; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 6px; font-weight: 600; }
-		.lprq__pairs-note a { color: #386174; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-		.lprq__pairs-note a:hover { color: #2a4a5a; }
+		.lprq__pairs-note { font-size: 15px; color: #4a5d68; text-align: center; margin: 0 0 32px; padding: 18px 22px; background: #FAFAF7; border-radius: 10px; line-height: 1.5; font-family: Georgia, 'Times New Roman', serif; border: 1px solid #E8E2D6; }
+		.lprq__pairs-note-label { display: block; font-size: 11px; color: #8A9499; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 10px; font-weight: 600; }
+		.lprq__pairs-link { display: inline-flex; align-items: center; gap: 12px; color: #386174 !important; font-weight: 600; text-decoration: none; padding: 6px 10px; border-radius: 8px; transition: background 0.15s ease; }
+		.lprq__pairs-link:hover { background: #ffffff; }
+		.lprq__pairs-link span { text-decoration: underline; text-underline-offset: 3px; }
+		.lprq__pairs-thumb { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: #ffffff; }
 		.lprq__privacy { font-size: 13px; color: #8A9499; line-height: 1.5; margin: 10px 0 16px; text-align: center; font-style: italic; }
 		.lprq__callout { background: #386174; color: #ffffff; padding: 16px 20px; border-radius: 10px; margin: 0 0 24px; text-align: center; font-size: 15px; line-height: 1.5; font-family: Georgia, \'Times New Roman\', serif; }
 		.lprq__callout strong { font-weight: 700; }
@@ -240,9 +242,50 @@ class SLRQ_Quiz {
 
 		<script>
 		(function() {
+			var STORAGE_KEY = 'lprq_progress_v1';
+			var STORAGE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 			var quizData = {};
 			var stepHistory = [1];
 			var currentStep = 1;
+
+			function saveProgress() {
+				try {
+					if (currentStep === 'results' || currentStep === 'loading') return;
+					localStorage.setItem(STORAGE_KEY, JSON.stringify({
+						quizData: quizData,
+						stepHistory: stepHistory,
+						currentStep: currentStep,
+						ts: Date.now()
+					}));
+				} catch (e) { /* localStorage blocked, fail silent */ }
+			}
+
+			function clearProgress() {
+				try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+			}
+
+			function restoreProgress() {
+				try {
+					var raw = localStorage.getItem(STORAGE_KEY);
+					if (!raw) return false;
+					var saved = JSON.parse(raw);
+					if (!saved || !saved.ts || (Date.now() - saved.ts) > STORAGE_TTL) {
+						clearProgress();
+						return false;
+					}
+					if (typeof saved.currentStep !== 'number' || saved.currentStep < 2) return false;
+					quizData = saved.quizData || {};
+					stepHistory = saved.stepHistory || [1];
+					var nameInput = document.getElementById('lprq-name');
+					if (nameInput && quizData.firstname) nameInput.value = quizData.firstname;
+					// Mark previously selected pills
+					Object.keys(quizData).forEach(function(field) {
+						var pill = document.querySelector('[data-field="' + field + '"] [data-value="' + quizData[field] + '"]');
+						if (pill) pill.classList.add('lprq__pill--selected');
+					});
+					return saved.currentStep;
+				} catch (e) { return false; }
+			}
 			var label = document.getElementById('lprq-label');
 			var form = document.getElementById('lprq-form');
 			var nameInput = document.getElementById('lprq-name');
@@ -260,6 +303,7 @@ class SLRQ_Quiz {
 					updateStepIndicators(n);
 				}
 				window.scrollTo({ top: 0, behavior: 'smooth' });
+				saveProgress();
 			}
 
 			function updateStepIndicators(current) {
@@ -401,6 +445,7 @@ class SLRQ_Quiz {
 			});
 
 			function renderResults(payload) {
+				clearProgress();
 				document.getElementById('lprq-result-greeting').textContent = 'For ' + (quizData.firstname || 'you');
 				var reass = document.getElementById('lprq-reassurance');
 				if (reass && quizData.email) {
@@ -431,7 +476,7 @@ class SLRQ_Quiz {
 							'<div class="lprq__product-name">' + p.name + '</div>' +
 							'<div class="lprq__product-scent">' + p.scent + '</div>' +
 							'<div class="lprq__product-blurb">' + p.blurb + '</div>' +
-							'<a class="lprq__product-link" href="' + p.shop_url + '" rel="nofollow">Get ' + p.name + ' &rarr;</a>' +
+							'<a class="lprq__product-link" href="' + p.shop_url + '" rel="nofollow">Get ' + p.name + '\u00a0&rarr;</a>' +
 						'</div>' +
 					'</div>';
 			}
@@ -441,7 +486,13 @@ class SLRQ_Quiz {
 				if (!slot || !p) return;
 				slot.innerHTML =
 					'<span class="lprq__pairs-note-label">Pairs well with</span>' +
-					'<a href="' + p.shop_url + '" rel="nofollow">' + p.name + (p.scent ? ' (' + p.scent + ')' : '') + ' &rarr;</a>';
+					'<a href="' + p.shop_url + '" rel="nofollow" class="lprq__pairs-link">' + (p.image_url ? '<img class="lprq__pairs-thumb" src="' + p.image_url + '" alt="' + p.name + '" loading="lazy" width="48" height="48" />' : '') + '<span>' + p.name + (p.scent ? ' (' + p.scent + ')' : '') + '\u00a0&rarr;</span></a>';
+			}
+
+			// Resume quiz from a recent saved state (within 24h)
+			var resumeStep = restoreProgress();
+			if (resumeStep) {
+				showStep(resumeStep);
 			}
 		})();
 		</script>
