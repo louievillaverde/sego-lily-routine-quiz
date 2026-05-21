@@ -90,10 +90,14 @@ class SLRQ_Quiz {
 		.lprq { max-width: 620px; width: 100%; padding: 40px 32px; background: #ffffff; border-radius: 16px; box-shadow: 0 10px 40px rgba(56, 97, 116, 0.12), 0 2px 8px rgba(56, 97, 116, 0.06); font-family: Georgia, 'Times New Roman', serif; color: #2C2C2C; box-sizing: border-box; }
 		.lprq * { box-sizing: border-box; }
 		.lprq__brand { text-align: center; font-size: 13px; letter-spacing: 2px; color: #386174; font-weight: bold; margin-bottom: 24px; }
-		.lprq__progress { margin: 0 0 40px; }
-		.lprq__progress-bar { background: #E8E2D6; height: 4px; border-radius: 2px; overflow: hidden; }
-		.lprq__progress-fill { background: #386174; height: 100%; transition: width 0.4s ease; width: 20%; }
-		.lprq__progress-label { font-size: 12px; color: #8A9499; text-align: center; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; }
+		.lprq__steps { display: flex; align-items: center; justify-content: center; gap: 0; margin: 0 0 36px; padding: 0; list-style: none; }
+		.lprq__step-dot { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; min-width: 36px; border-radius: 50%; background: #ffffff; border: 2px solid #D4CFC4; color: #8A9499; font-size: 14px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; cursor: not-allowed; transition: all 0.2s ease; padding: 0; }
+		.lprq__step-line { flex: 1; max-width: 36px; height: 2px; background: #D4CFC4; transition: background 0.3s ease; }
+		.lprq__step-dot--done { background: #386174 !important; border-color: #386174 !important; color: #ffffff !important; cursor: pointer !important; }
+		.lprq__step-dot--done:hover { transform: scale(1.08); box-shadow: 0 2px 8px rgba(56, 97, 116, 0.3); }
+		.lprq__step-dot--current { background: #ffffff !important; border-color: #386174 !important; color: #386174 !important; box-shadow: 0 0 0 4px rgba(56, 97, 116, 0.15); cursor: default !important; }
+		.lprq__step-line--done { background: #386174; }
+		.lprq__step-label { text-align: center; font-size: 12px; color: #8A9499; margin: 0 0 28px; letter-spacing: 1px; text-transform: uppercase; }
 		.lprq__step { display: none; opacity: 0; transition: opacity 0.3s ease; }
 		.lprq__step--active { display: block; opacity: 1; }
 		.lprq__step h2 { font-size: 28px; font-weight: 600; margin: 0 0 32px; text-align: center; line-height: 1.3; color: #2C2C2C; font-family: Georgia, 'Times New Roman', serif; }
@@ -106,8 +110,6 @@ class SLRQ_Quiz {
 		.lprq__pill--selected, button.lprq__pill--selected { background: #386174 !important; color: #ffffff !important; box-shadow: 0 4px 12px rgba(56, 97, 116, 0.2); }
 		.lprq__btn { display: block; width: 100%; padding: 16px 24px; font-size: 17px; font-weight: 600; background: #386174; color: #ffffff; border: none; border-radius: 10px; cursor: pointer; margin-top: 20px; font-family: Georgia, 'Times New Roman', serif; transition: all 0.15s ease; letter-spacing: 0.3px; }
 		.lprq__btn:hover { background: #2a4a5a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56, 97, 116, 0.2); }
-		.lprq__back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 24px; padding: 10px 16px; font-size: 14px; color: #386174; background: #F7F6F3; border: 1px solid #D4CFC4; border-radius: 8px; cursor: pointer; font-family: Georgia, 'Times New Roman', serif; text-decoration: none; transition: all 0.15s ease; }
-		.lprq__back:hover { background: #ffffff; border-color: #386174; }
 		.lprq__error { color: #b8302e; font-size: 14px; margin-top: 10px; min-height: 20px; font-family: Georgia, 'Times New Roman', serif; }
 		.lprq__loading { text-align: center; padding: 80px 20px; color: #8A9499; font-size: 16px; font-style: italic; }
 		.lprq__results { text-align: center; }
@@ -139,10 +141,18 @@ class SLRQ_Quiz {
 
 				<div class="lprq__brand">SEGO LILY SKINCARE</div>
 
-				<div class="lprq__progress">
-					<div class="lprq__progress-bar"><div class="lprq__progress-fill" id="lprq-fill"></div></div>
-					<div class="lprq__progress-label" id="lprq-label">Step 1 of 5</div>
-				</div>
+				<ol class="lprq__steps" id="lprq-steps">
+					<li><button type="button" class="lprq__step-dot lprq__step-dot--current" data-goto="1" aria-label="Step 1">1</button></li>
+					<li class="lprq__step-line"></li>
+					<li><button type="button" class="lprq__step-dot" data-goto="2" aria-label="Step 2">2</button></li>
+					<li class="lprq__step-line"></li>
+					<li><button type="button" class="lprq__step-dot" data-goto="3" aria-label="Step 3">3</button></li>
+					<li class="lprq__step-line"></li>
+					<li><button type="button" class="lprq__step-dot" data-goto="4" aria-label="Step 4">4</button></li>
+					<li class="lprq__step-line"></li>
+					<li><button type="button" class="lprq__step-dot" data-goto="5" aria-label="Step 5">5</button></li>
+				</ol>
+				<p class="lprq__step-label" id="lprq-label">Step 1 of 5</p>
 
 				<form id="lprq-form" autocomplete="on" onsubmit="return false;">
 					<?php wp_nonce_field( 'lprq_quiz', 'lprq_nonce' ); ?>
@@ -162,7 +172,6 @@ class SLRQ_Quiz {
 							<button type="button" class="lprq__pill" data-value="Redness &amp; sensitivity">Redness &amp; sensitivity</button>
 							<button type="button" class="lprq__pill" data-value="Breakouts">Breakouts</button>
 						</div>
-						<button type="button" class="lprq__back" data-back>&larr; Back</button>
 					</div>
 
 					<div class="lprq__step" data-step="3">
@@ -172,7 +181,6 @@ class SLRQ_Quiz {
 							<button type="button" class="lprq__pill" data-value="4-6">4 to 6 products</button>
 							<button type="button" class="lprq__pill" data-value="7+">7 or more</button>
 						</div>
-						<button type="button" class="lprq__back" data-back>&larr; Back</button>
 					</div>
 
 					<div class="lprq__step" data-step="4">
@@ -183,7 +191,6 @@ class SLRQ_Quiz {
 							<button type="button" class="lprq__pill" data-value="Don&rsquo;t trust ingredients">Don&rsquo;t trust the ingredients</button>
 							<button type="button" class="lprq__pill" data-value="Just want something simple">Just want something simple</button>
 						</div>
-						<button type="button" class="lprq__back" data-back>&larr; Back</button>
 					</div>
 
 					<div class="lprq__step" data-step="5">
@@ -191,7 +198,6 @@ class SLRQ_Quiz {
 						<input type="email" class="lprq__input" id="lprq-email" placeholder="you@email.com" autocomplete="email" />
 						<button type="button" class="lprq__btn" data-submit>Get My Routine</button>
 						<div class="lprq__error" id="lprq-error"></div>
-						<button type="button" class="lprq__back" data-back>&larr; Back</button>
 					</div>
 
 					<div class="lprq__step" data-step="loading">
@@ -217,7 +223,6 @@ class SLRQ_Quiz {
 			var quizData = {};
 			var stepHistory = [1];
 			var currentStep = 1;
-			var fill = document.getElementById('lprq-fill');
 			var label = document.getElementById('lprq-label');
 			var form = document.getElementById('lprq-form');
 			var nameInput = document.getElementById('lprq-name');
@@ -231,13 +236,46 @@ class SLRQ_Quiz {
 				if (target) target.classList.add('lprq__step--active');
 				if (typeof n === 'number') {
 					currentStep = n;
-					var pct = Math.round((n / 5) * 100);
-					fill.style.width = pct + '%';
 					label.textContent = 'Step ' + n + ' of 5';
+					updateStepIndicators(n);
 				}
-				// Scroll the step into view (helps on mobile)
 				window.scrollTo({ top: 0, behavior: 'smooth' });
 			}
+
+			function updateStepIndicators(current) {
+				var dots = document.querySelectorAll('.lprq__step-dot');
+				var lines = document.querySelectorAll('.lprq__step-line');
+				dots.forEach(function(dot, idx) {
+					var stepNum = idx + 1;
+					dot.classList.remove('lprq__step-dot--done', 'lprq__step-dot--current');
+					if (stepNum < current) {
+						dot.classList.add('lprq__step-dot--done');
+					} else if (stepNum === current) {
+						dot.classList.add('lprq__step-dot--current');
+					}
+				});
+				lines.forEach(function(line, idx) {
+					if (idx + 1 < current) {
+						line.classList.add('lprq__step-line--done');
+					} else {
+						line.classList.remove('lprq__step-line--done');
+					}
+				});
+			}
+
+			// Wire up clickable step indicators (only past steps are clickable)
+			document.querySelectorAll('.lprq__step-dot').forEach(function(dot) {
+				dot.addEventListener('click', function() {
+					var target = parseInt(dot.getAttribute('data-goto'), 10);
+					if (target && target < currentStep) {
+						// Pop history back to target step
+						while (stepHistory.length > 1 && stepHistory[stepHistory.length - 1] > target) {
+							stepHistory.pop();
+						}
+						showStep(target);
+					}
+				});
+			});
 
 			function validateFirstName(raw) {
 				var trimmed = raw.trim();
@@ -289,15 +327,6 @@ class SLRQ_Quiz {
 					var next = currentStep + 1;
 					stepHistory.push(next);
 					showStep(next);
-				});
-			});
-
-			document.querySelectorAll('[data-back]').forEach(function(btn) {
-				btn.addEventListener('click', function() {
-					if (stepHistory.length > 1) {
-						stepHistory.pop();
-						showStep(stepHistory[stepHistory.length - 1]);
-					}
 				});
 			});
 
