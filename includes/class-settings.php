@@ -21,8 +21,8 @@ class SLRQ_Settings {
 
 	public static function register_menu() {
 		add_options_page(
-			'Sego Lily Routine Quiz',
-			'Sego Lily Routine Quiz',
+			'Routine Quiz',
+			'Routine Quiz',
 			'manage_options',
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' )
@@ -71,7 +71,7 @@ class SLRQ_Settings {
 		}
 		?>
 		<div class="wrap">
-			<h1>Sego Lily Routine Quiz</h1>
+			<h1>Routine Quiz</h1>
 			<p style="font-size:14px;color:#555;max-width:720px;">A 5-question quiz that captures retail leads, syncs them to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at <a href="<?php echo esc_url( home_url( '/your-routine' ) ); ?>"><?php echo esc_html( home_url( '/your-routine' ) ); ?></a>.</p>
 
 			<form method="post" action="options.php">

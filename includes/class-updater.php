@@ -83,6 +83,7 @@ class SLRQ_Updater {
 			return null;
 		}
 
+		$icon_base = 'https://raw.githubusercontent.com/' . self::$github_repo . '/main/assets/';
 		$info = array(
 			'version'       => $version,
 			'download_url'  => $zip_url,
@@ -91,7 +92,16 @@ class SLRQ_Updater {
 			'requires_php'  => '7.4',
 			'last_updated'  => $body['published_at'] ?? '',
 			'changelog'     => $body['body'] ?? '',
-			'plugin_name'   => 'Sego Lily Routine Quiz',
+			'plugin_name'   => 'Routine Quiz',
+			'icons'         => array(
+				'default' => $icon_base . 'icon-256x256.png',
+				'1x'      => $icon_base . 'icon-128x128.png',
+				'2x'      => $icon_base . 'icon-256x256.png',
+			),
+			'banners'       => array(
+				'low'  => $icon_base . 'banner-772x250.png',
+				'high' => $icon_base . 'banner-772x250.png',
+			),
 		);
 		set_transient( self::$cache_key, $info, self::$cache_ttl );
 		return $info;
@@ -115,6 +125,8 @@ class SLRQ_Updater {
 				'tested'       => $info['tested'],
 				'requires'     => $info['requires'],
 				'requires_php' => $info['requires_php'],
+				'icons'        => $info['icons'],
+				'banners'      => $info['banners'],
 			);
 		}
 		return $transient;
@@ -138,6 +150,8 @@ class SLRQ_Updater {
 			'requires_php'  => $info['requires_php'],
 			'last_updated'  => $info['last_updated'],
 			'download_link' => $info['download_url'],
+			'icons'         => $info['icons'],
+			'banners'       => $info['banners'],
 			'sections'      => array(
 				'description' => 'Sego Lily-branded skincare routine quiz. Customer answers 5 questions, gets a 2-product recommendation from the Sego Lily product line, lead syncs to Mautic with tags.',
 				'changelog'   => $info['changelog'],

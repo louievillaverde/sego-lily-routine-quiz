@@ -37,7 +37,7 @@ class SLRQ_Mautic {
 	public static function send_quiz_lead( $data ) {
 		$creds = self::get_credentials();
 		if ( ! $creds ) {
-			return array( 'success' => false, 'message' => 'Mautic not configured. Go to Settings > Sego Lily Routine Quiz to add credentials.' );
+			return array( 'success' => false, 'message' => 'Mautic not configured. Go to Settings > Routine Quiz to add credentials.' );
 		}
 
 		$email = isset( $data['email'] ) ? sanitize_email( $data['email'] ) : '';
