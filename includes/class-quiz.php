@@ -1,6 +1,6 @@
 <?php
 /**
- * Sego Lily Routine Quiz: renders the on-site routine quiz + handles submission.
+ * Routine Quiz: renders the on-site routine quiz + handles submission.
  *
  * Uses SLRQ_Mautic for lead sync. No dependency on sibling plugins.
  *
@@ -17,6 +17,39 @@ class SLRQ_Quiz {
 		add_shortcode( 'lp_routine_quiz', array( __CLASS__, 'render_shortcode' ) );
 		add_action( 'wp_ajax_lprq_submit', array( __CLASS__, 'handle_submit' ) );
 		add_action( 'wp_ajax_nopriv_lprq_submit', array( __CLASS__, 'handle_submit' ) );
+		add_filter( 'template_include', array( __CLASS__, 'maybe_landing_template' ), 99 );
+		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
+	}
+
+	/**
+	 * Landing-page override: when the requested page contains the quiz shortcode,
+	 * serve our minimal landing template instead of the theme's page template.
+	 * This hides the site header, footer, nav, and any wholesale-plugin toggles
+	 * so the quiz feels like a true landing page.
+	 */
+	public static function maybe_landing_template( $template ) {
+		if ( ! is_page() ) {
+			return $template;
+		}
+		$post = get_post();
+		if ( ! $post || ! has_shortcode( $post->post_content, 'lp_routine_quiz' ) ) {
+			return $template;
+		}
+		$landing = SLRQ_PLUGIN_DIR . 'includes/template-landing.php';
+		if ( file_exists( $landing ) ) {
+			return $landing;
+		}
+		return $template;
+	}
+
+	public static function body_class( $classes ) {
+		if ( is_page() ) {
+			$post = get_post();
+			if ( $post && has_shortcode( $post->post_content, 'lp_routine_quiz' ) ) {
+				$classes[] = 'lprq-landing';
+			}
+		}
+		return $classes;
 	}
 
 	public static function render_shortcode( $atts = array() ) {
@@ -28,122 +61,155 @@ class SLRQ_Quiz {
 		ob_start();
 		?>
 		<style>
-		.lprq { max-width: 580px; margin: 0 auto; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #2c3e44; }
-		.lprq__intro { text-align: center; margin-bottom: 32px; }
-		.lprq__title { font-size: 28px; font-weight: 600; margin: 0 0 12px; color: #2c3e44; }
-		.lprq__subtitle { font-size: 16px; color: #628393; margin: 0; line-height: 1.5; }
-		.lprq__progress { margin: 24px 0; }
+		/* Hide common theme chrome selectors as a safety net for any theme
+		   that doesn't fully respect template_include (some themes inject
+		   header/footer via hooks anyway). */
+		body.lprq-landing > header,
+		body.lprq-landing > footer,
+		body.lprq-landing > .site-header,
+		body.lprq-landing > .site-footer,
+		body.lprq-landing .main-navigation,
+		body.lprq-landing .site-navigation,
+		body.lprq-landing #masthead,
+		body.lprq-landing #colophon,
+		body.lprq-landing .header-main,
+		body.lprq-landing .footer-main,
+		body.lprq-landing .entry-header,
+		body.lprq-landing .entry-title,
+		body.lprq-landing .page-title,
+		body.lprq-landing .breadcrumb,
+		body.lprq-landing .breadcrumbs,
+		body.lprq-landing .slw-customer-mode-toggle,
+		body.lprq-landing .slw-mode-toggle,
+		body.lprq-landing .wholesale-toggle,
+		body.lprq-landing .for-my-store-toggle { display: none !important; }
+
+		body.lprq-landing { background: linear-gradient(135deg, #F7F6F3 0%, #EEF3F5 100%); margin: 0; }
+
+		.lprq-wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 16px; box-sizing: border-box; }
+		.lprq { max-width: 620px; width: 100%; padding: 40px 32px; background: #ffffff; border-radius: 16px; box-shadow: 0 10px 40px rgba(56, 97, 116, 0.12), 0 2px 8px rgba(56, 97, 116, 0.06); font-family: Georgia, 'Times New Roman', serif; color: #2C2C2C; box-sizing: border-box; }
+		.lprq * { box-sizing: border-box; }
+		.lprq__brand { text-align: center; font-size: 13px; letter-spacing: 2px; color: #386174; font-weight: bold; margin-bottom: 24px; }
+		.lprq__progress { margin: 0 0 40px; }
 		.lprq__progress-bar { background: #E8E2D6; height: 4px; border-radius: 2px; overflow: hidden; }
-		.lprq__progress-fill { background: #386174; height: 100%; transition: width 0.3s ease; width: 20%; }
-		.lprq__progress-label { font-size: 13px; color: #628393; text-align: center; margin-top: 8px; }
-		.lprq__step { display: none; }
-		.lprq__step--active { display: block; }
-		.lprq__step h2 { font-size: 22px; font-weight: 600; margin: 0 0 24px; text-align: center; line-height: 1.4; }
-		.lprq__input { width: 100%; padding: 14px 16px; font-size: 16px; border: 1px solid #D4CFC4; border-radius: 8px; background: #FAFAF7; box-sizing: border-box; font-family: inherit; }
-		.lprq__input:focus { outline: none; border-color: #386174; background: #fff; }
-		.lprq__pills { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-		.lprq__pill { padding: 14px 18px; font-size: 15px; background: #FAFAF7; border: 1px solid #D4CFC4; border-radius: 8px; cursor: pointer; text-align: left; font-family: inherit; color: #2c3e44; transition: all 0.15s; }
-		.lprq__pill:hover { border-color: #386174; background: #fff; }
-		.lprq__pill--selected { border-color: #386174; background: #EEF3F5; }
-		.lprq__btn { width: 100%; padding: 14px 20px; font-size: 16px; font-weight: 600; background: #386174; color: #fff; border: none; border-radius: 8px; cursor: pointer; margin-top: 16px; font-family: inherit; }
-		.lprq__btn:hover { background: #2a4a5a; }
-		.lprq__back { display: inline-block; margin-top: 12px; padding: 8px 0; font-size: 14px; color: #628393; background: none; border: none; cursor: pointer; font-family: inherit; }
+		.lprq__progress-fill { background: #386174; height: 100%; transition: width 0.4s ease; width: 20%; }
+		.lprq__progress-label { font-size: 12px; color: #8A9499; text-align: center; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase; }
+		.lprq__step { display: none; opacity: 0; transition: opacity 0.3s ease; }
+		.lprq__step--active { display: block; opacity: 1; }
+		.lprq__step h2 { font-size: 28px; font-weight: 600; margin: 0 0 32px; text-align: center; line-height: 1.3; color: #2C2C2C; font-family: Georgia, 'Times New Roman', serif; }
+		.lprq__input { width: 100%; padding: 16px 18px; font-size: 17px; border: 2px solid #D4CFC4; border-radius: 10px; background: #FAFAF7; outline: none; font-family: Georgia, 'Times New Roman', serif; color: #2C2C2C; transition: all 0.15s ease; }
+		.lprq__input:focus { border-color: #386174; background: #ffffff; box-shadow: 0 0 0 3px rgba(56, 97, 116, 0.1); }
+		.lprq__input-error { border-color: #b8302e !important; }
+		.lprq__pills { display: flex; flex-direction: column; gap: 12px; margin: 0 0 24px; }
+		.lprq__pill { display: block; width: 100%; padding: 18px 22px; font-size: 16px; font-weight: 500; background: #ffffff; border: 2px solid #386174; color: #386174; border-radius: 10px; cursor: pointer; text-align: left; font-family: Georgia, 'Times New Roman', serif; transition: all 0.15s ease; line-height: 1.4; }
+		.lprq__pill:hover { background: #386174; color: #ffffff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56, 97, 116, 0.2); }
+		.lprq__pill--selected { background: #386174; color: #ffffff; box-shadow: 0 4px 12px rgba(56, 97, 116, 0.2); }
+		.lprq__btn { display: block; width: 100%; padding: 16px 24px; font-size: 17px; font-weight: 600; background: #386174; color: #ffffff; border: none; border-radius: 10px; cursor: pointer; margin-top: 20px; font-family: Georgia, 'Times New Roman', serif; transition: all 0.15s ease; letter-spacing: 0.3px; }
+		.lprq__btn:hover { background: #2a4a5a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56, 97, 116, 0.2); }
+		.lprq__back { display: block; margin: 20px auto 0; padding: 8px 16px; font-size: 14px; color: #8A9499; background: none; border: none; cursor: pointer; font-family: Georgia, 'Times New Roman', serif; text-decoration: underline; }
 		.lprq__back:hover { color: #386174; }
-		.lprq__error { color: #b8302e; font-size: 14px; margin-top: 8px; min-height: 20px; }
-		.lprq__loading { text-align: center; padding: 60px 20px; color: #628393; }
+		.lprq__error { color: #b8302e; font-size: 14px; margin-top: 10px; min-height: 20px; font-family: Georgia, 'Times New Roman', serif; }
+		.lprq__loading { text-align: center; padding: 80px 20px; color: #8A9499; font-size: 16px; font-style: italic; }
 		.lprq__results { text-align: center; }
-		.lprq__results-name { font-size: 18px; color: #628393; margin: 0 0 8px; }
-		.lprq__results-heading { font-size: 26px; font-weight: 600; margin: 0 0 12px; color: #2c3e44; }
-		.lprq__results-why { font-size: 15px; color: #4a5d68; line-height: 1.5; margin: 0 0 32px; padding: 16px; background: #FAFAF7; border-radius: 8px; }
-		.lprq__products { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
-		@media (max-width: 480px) { .lprq__products { grid-template-columns: 1fr; } .lprq__pills { gap: 8px; } .lprq__pill { padding: 12px 14px; font-size: 14px; } }
-		.lprq__product { background: #fff; border: 1px solid #E8E2D6; border-radius: 12px; padding: 20px; text-align: left; }
-		.lprq__product-image { width: 100%; aspect-ratio: 1; background: #F7F6F3; border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; color: #B8A98C; font-size: 14px; overflow: hidden; }
+		.lprq__results-greeting { font-size: 14px; color: #8A9499; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 12px; }
+		.lprq__results-heading { font-size: 32px; font-weight: 600; margin: 0 0 16px; color: #2C2C2C; line-height: 1.3; }
+		.lprq__results-why { font-size: 16px; color: #4a5d68; line-height: 1.6; margin: 0 0 36px; padding: 20px 24px; background: #F7F6F3; border-radius: 10px; text-align: left; }
+		.lprq__products { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 32px; text-align: left; }
+		.lprq__product { background: #ffffff; border: 1px solid #E8E2D6; border-radius: 12px; padding: 24px; }
+		.lprq__product-image { width: 100%; aspect-ratio: 1; background: #F7F6F3; border-radius: 8px; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; color: #B8A98C; font-size: 13px; overflow: hidden; }
 		.lprq__product-image img { width: 100%; height: 100%; object-fit: cover; }
-		.lprq__product-name { font-size: 17px; font-weight: 600; margin: 0 0 4px; color: #2c3e44; }
-		.lprq__product-scent { font-size: 14px; color: #628393; margin: 0 0 8px; }
-		.lprq__product-blurb { font-size: 13px; color: #4a5d68; line-height: 1.4; margin: 0 0 12px; }
-		.lprq__product-link { display: inline-block; font-size: 14px; font-weight: 600; color: #386174; text-decoration: none; }
-		.lprq__product-link:hover { text-decoration: underline; }
-		.lprq__signoff { font-size: 14px; color: #628393; font-style: italic; margin-top: 24px; }
+		.lprq__product-name { font-size: 18px; font-weight: 600; margin: 0 0 4px; color: #2C2C2C; }
+		.lprq__product-scent { font-size: 14px; color: #8A9499; margin: 0 0 10px; font-style: italic; }
+		.lprq__product-blurb { font-size: 14px; color: #4a5d68; line-height: 1.5; margin: 0 0 16px; }
+		.lprq__product-link { display: inline-block; padding: 10px 18px; font-size: 14px; font-weight: 600; background: #386174; color: #ffffff !important; text-decoration: none; border-radius: 6px; }
+		.lprq__product-link:hover { background: #2a4a5a; }
+		.lprq__signoff { font-size: 15px; color: #628393; font-style: italic; margin-top: 28px; }
+
+		@media (max-width: 540px) {
+			.lprq { padding: 28px 20px; }
+			.lprq__step h2 { font-size: 22px; margin: 0 0 24px; }
+			.lprq__pill { padding: 16px 18px; font-size: 15px; }
+			.lprq__products { grid-template-columns: 1fr; gap: 16px; }
+			.lprq__results-heading { font-size: 26px; }
+		}
 		</style>
 
-		<div class="lprq" id="lprq">
+		<div class="lprq-wrap">
+			<div class="lprq" id="lprq">
 
-			<div class="lprq__intro">
-				<h1 class="lprq__title"><?php echo esc_html( $atts['heading'] ); ?></h1>
-				<p class="lprq__subtitle"><?php echo esc_html( $atts['subheading'] ); ?></p>
+				<div class="lprq__brand">SEGO LILY SKINCARE</div>
+
+				<div class="lprq__progress">
+					<div class="lprq__progress-bar"><div class="lprq__progress-fill" id="lprq-fill"></div></div>
+					<div class="lprq__progress-label" id="lprq-label">Step 1 of 5</div>
+				</div>
+
+				<form id="lprq-form" autocomplete="on" onsubmit="return false;">
+					<?php wp_nonce_field( 'lprq_quiz', 'lprq_nonce' ); ?>
+
+					<div class="lprq__step lprq__step--active" data-step="1">
+						<h2>What&rsquo;s your first name?</h2>
+						<input type="text" class="lprq__input" id="lprq-name" placeholder="First name" autocomplete="given-name" maxlength="30" />
+						<div class="lprq__error" id="lprq-name-error"></div>
+						<button type="button" class="lprq__btn" data-next>Next</button>
+					</div>
+
+					<div class="lprq__step" data-step="2">
+						<h2>What bugs you most about your skin?</h2>
+						<div class="lprq__pills" data-field="skin_concern">
+							<button type="button" class="lprq__pill" data-value="Wrinkles &amp; dark spots">Wrinkles &amp; dark spots</button>
+							<button type="button" class="lprq__pill" data-value="Dryness &amp; tightness">Dryness &amp; tightness</button>
+							<button type="button" class="lprq__pill" data-value="Redness &amp; sensitivity">Redness &amp; sensitivity</button>
+							<button type="button" class="lprq__pill" data-value="Breakouts">Breakouts</button>
+						</div>
+						<button type="button" class="lprq__back" data-back>&larr; Back</button>
+					</div>
+
+					<div class="lprq__step" data-step="3">
+						<h2>How many skincare products do you use daily?</h2>
+						<div class="lprq__pills" data-field="product_count">
+							<button type="button" class="lprq__pill" data-value="1-3">1 to 3 products</button>
+							<button type="button" class="lprq__pill" data-value="4-6">4 to 6 products</button>
+							<button type="button" class="lprq__pill" data-value="7+">7 or more</button>
+						</div>
+						<button type="button" class="lprq__back" data-back>&larr; Back</button>
+					</div>
+
+					<div class="lprq__step" data-step="4">
+						<h2>What frustrates you most about skincare?</h2>
+						<div class="lprq__pills" data-field="frustration">
+							<button type="button" class="lprq__pill" data-value="Nothing works long enough">Nothing works long enough</button>
+							<button type="button" class="lprq__pill" data-value="Too many products">Too many products</button>
+							<button type="button" class="lprq__pill" data-value="Don&rsquo;t trust ingredients">Don&rsquo;t trust the ingredients</button>
+							<button type="button" class="lprq__pill" data-value="Just want something simple">Just want something simple</button>
+						</div>
+						<button type="button" class="lprq__back" data-back>&larr; Back</button>
+					</div>
+
+					<div class="lprq__step" data-step="5">
+						<h2>Where should we send your routine?</h2>
+						<input type="email" class="lprq__input" id="lprq-email" placeholder="you@email.com" autocomplete="email" />
+						<button type="button" class="lprq__btn" data-submit>Get My Routine</button>
+						<div class="lprq__error" id="lprq-error"></div>
+						<button type="button" class="lprq__back" data-back>&larr; Back</button>
+					</div>
+
+					<div class="lprq__step" data-step="loading">
+						<div class="lprq__loading">Building your routine&hellip;</div>
+					</div>
+
+					<div class="lprq__step" data-step="results">
+						<div class="lprq__results">
+							<p class="lprq__results-greeting" id="lprq-result-greeting"></p>
+							<h2 class="lprq__results-heading">Your routine is 2 things.</h2>
+							<p class="lprq__results-why" id="lprq-result-why"></p>
+							<div class="lprq__products" id="lprq-result-products"></div>
+							<p class="lprq__signoff"><?php echo esc_html( apply_filters( 'lprq_signoff', '' ) ); ?></p>
+						</div>
+					</div>
+				</form>
+
 			</div>
-
-			<div class="lprq__progress">
-				<div class="lprq__progress-bar"><div class="lprq__progress-fill" id="lprq-fill"></div></div>
-				<div class="lprq__progress-label" id="lprq-label">Step 1 of 5</div>
-			</div>
-
-			<form id="lprq-form" autocomplete="on" onsubmit="return false;">
-				<?php wp_nonce_field( 'lprq_quiz', 'lprq_nonce' ); ?>
-
-				<div class="lprq__step lprq__step--active" data-step="1">
-					<h2>What's your first name?</h2>
-					<input type="text" class="lprq__input" id="lprq-name" placeholder="First name" autocomplete="given-name" />
-					<button type="button" class="lprq__btn" data-next>Next</button>
-				</div>
-
-				<div class="lprq__step" data-step="2">
-					<h2>What bugs you most about your skin?</h2>
-					<div class="lprq__pills" data-field="skin_concern">
-						<button type="button" class="lprq__pill" data-value="Wrinkles &amp; dark spots">Wrinkles &amp; dark spots</button>
-						<button type="button" class="lprq__pill" data-value="Dryness &amp; tightness">Dryness &amp; tightness</button>
-						<button type="button" class="lprq__pill" data-value="Redness &amp; sensitivity">Redness &amp; sensitivity</button>
-						<button type="button" class="lprq__pill" data-value="Breakouts">Breakouts</button>
-					</div>
-					<button type="button" class="lprq__back" data-back>Back</button>
-				</div>
-
-				<div class="lprq__step" data-step="3">
-					<h2>How many skincare products do you use daily?</h2>
-					<div class="lprq__pills" data-field="product_count">
-						<button type="button" class="lprq__pill" data-value="1-3">1 to 3 products</button>
-						<button type="button" class="lprq__pill" data-value="4-6">4 to 6 products</button>
-						<button type="button" class="lprq__pill" data-value="7+">7 or more</button>
-					</div>
-					<button type="button" class="lprq__back" data-back>Back</button>
-				</div>
-
-				<div class="lprq__step" data-step="4">
-					<h2>What frustrates you most about skincare?</h2>
-					<div class="lprq__pills" data-field="frustration">
-						<button type="button" class="lprq__pill" data-value="Nothing works long enough">Nothing works long enough</button>
-						<button type="button" class="lprq__pill" data-value="Too many products">Too many products</button>
-						<button type="button" class="lprq__pill" data-value="Don't trust ingredients">Don't trust the ingredients</button>
-						<button type="button" class="lprq__pill" data-value="Just want something simple">Just want something simple</button>
-					</div>
-					<button type="button" class="lprq__back" data-back>Back</button>
-				</div>
-
-				<div class="lprq__step" data-step="5">
-					<h2>Where should we send your routine?</h2>
-					<input type="email" class="lprq__input" id="lprq-email" placeholder="you@email.com" autocomplete="email" />
-					<button type="button" class="lprq__btn" data-submit>Get My Routine</button>
-					<div class="lprq__error" id="lprq-error"></div>
-					<button type="button" class="lprq__back" data-back>Back</button>
-				</div>
-
-				<div class="lprq__step" data-step="loading">
-					<div class="lprq__loading">Building your routine...</div>
-				</div>
-
-				<div class="lprq__step" data-step="results">
-					<div class="lprq__results">
-						<p class="lprq__results-name" id="lprq-result-greeting"></p>
-						<h2 class="lprq__results-heading">Your routine is 2 things.</h2>
-						<p class="lprq__results-why" id="lprq-result-why"></p>
-						<div class="lprq__products" id="lprq-result-products"></div>
-						<p class="lprq__signoff"><?php echo esc_html( apply_filters( 'lprq_signoff', '' ) ); ?></p>
-					</div>
-				</div>
-			</form>
-
 		</div>
 
 		<script>
@@ -155,6 +221,7 @@ class SLRQ_Quiz {
 			var label = document.getElementById('lprq-label');
 			var form = document.getElementById('lprq-form');
 			var nameInput = document.getElementById('lprq-name');
+			var nameError = document.getElementById('lprq-name-error');
 			var emailInput = document.getElementById('lprq-email');
 			var errorEl = document.getElementById('lprq-error');
 
@@ -168,7 +235,29 @@ class SLRQ_Quiz {
 					fill.style.width = pct + '%';
 					label.textContent = 'Step ' + n + ' of 5';
 				}
+				// Scroll the step into view (helps on mobile)
+				window.scrollTo({ top: 0, behavior: 'smooth' });
 			}
+
+			function validateFirstName(raw) {
+				var trimmed = raw.trim();
+				if (!trimmed) { return { ok: false, msg: 'Tell us your first name.' }; }
+				if (trimmed.length > 30) { return { ok: false, msg: 'Too long. First name only please.' }; }
+				if (/\s/.test(trimmed)) { return { ok: false, msg: 'Just your first name, no spaces.' }; }
+				if (!/^[A-Za-zÀ-ſ'\-]+$/.test(trimmed)) { return { ok: false, msg: 'Letters only.' }; }
+				return { ok: true, value: trimmed };
+			}
+
+			// Live validation on first name field
+			nameInput.addEventListener('input', function() {
+				// Strip anything after first space as a UX nudge
+				var val = nameInput.value;
+				if (val.indexOf(' ') !== -1) {
+					nameInput.value = val.split(' ')[0];
+				}
+				nameInput.classList.remove('lprq__input-error');
+				nameError.textContent = '';
+			});
 
 			document.querySelectorAll('.lprq__pill').forEach(function(pill) {
 				pill.addEventListener('click', function() {
@@ -181,16 +270,21 @@ class SLRQ_Quiz {
 						var next = currentStep + 1;
 						stepHistory.push(next);
 						showStep(next);
-					}, 200);
+					}, 250);
 				});
 			});
 
 			document.querySelectorAll('[data-next]').forEach(function(btn) {
 				btn.addEventListener('click', function() {
 					if (currentStep === 1) {
-						var name = nameInput.value.trim();
-						if (!name) { nameInput.focus(); return; }
-						quizData.firstname = name;
+						var v = validateFirstName(nameInput.value);
+						if (!v.ok) {
+							nameError.textContent = v.msg;
+							nameInput.classList.add('lprq__input-error');
+							nameInput.focus();
+							return;
+						}
+						quizData.firstname = v.value;
 					}
 					var next = currentStep + 1;
 					stepHistory.push(next);
@@ -258,7 +352,7 @@ class SLRQ_Quiz {
 			});
 
 			function renderResults(payload) {
-				document.getElementById('lprq-result-greeting').textContent = 'For you, ' + (quizData.firstname || 'friend') + '.';
+				document.getElementById('lprq-result-greeting').textContent = 'For ' + (quizData.firstname || 'you');
 				document.getElementById('lprq-result-why').textContent = payload.why || '';
 				var grid = document.getElementById('lprq-result-products');
 				grid.innerHTML = '';
@@ -293,6 +387,10 @@ class SLRQ_Quiz {
 		$skin_concern  = sanitize_text_field( wp_unslash( $_POST['skin_concern'] ?? '' ) );
 		$product_count = sanitize_text_field( wp_unslash( $_POST['product_count'] ?? '' ) );
 		$frustration   = sanitize_text_field( wp_unslash( $_POST['frustration'] ?? '' ) );
+
+		// Server-side first name validation: strip after first space, cap at 30.
+		$firstname = preg_replace( '/\s.*$/', '', $firstname );
+		$firstname = substr( $firstname, 0, 30 );
 
 		if ( empty( $email ) || ! is_email( $email ) ) {
 			wp_send_json_error( array( 'message' => 'Please enter a valid email address.' ) );
