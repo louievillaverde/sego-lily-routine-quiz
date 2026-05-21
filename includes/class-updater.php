@@ -139,7 +139,7 @@ class SLRQ_Updater {
 			'last_updated'  => $info['last_updated'],
 			'download_link' => $info['download_url'],
 			'sections'      => array(
-				'description' => 'Quiz engine for Lead Piranha client deployments. Sego Lily-branded skincare routine quiz. Customer answers 5 questions, gets a 2-product recommendation from Holly's line, lead syncs to Mautic with tags.',
+				'description' => 'Sego Lily-branded skincare routine quiz. Customer answers 5 questions, gets a 2-product recommendation from the Sego Lily product line, lead syncs to Mautic with tags.',
 				'changelog'   => $info['changelog'],
 			),
 		);

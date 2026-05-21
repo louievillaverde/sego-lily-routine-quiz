@@ -3,7 +3,7 @@
  * Plugin Name:       Sego Lily Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Sego Lily-branded skincare routine quiz. Customer answers 5 questions, gets a 2-product recommendation from Holly's line, lead syncs to Mautic with tags. Self-contained — no engine dependency. Auto-creates /your-routine page on activation.
- * Version:           1.1.0
+ * Version:           1.1.1
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.1.0' );
+define( 'SLRQ_VERSION', '1.1.1' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
