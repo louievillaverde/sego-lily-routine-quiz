@@ -431,7 +431,7 @@ class SLRQ_Quiz {
 							'<div class="lprq__product-name">' + p.name + '</div>' +
 							'<div class="lprq__product-scent">' + p.scent + '</div>' +
 							'<div class="lprq__product-blurb">' + p.blurb + '</div>' +
-							'<a class="lprq__product-link" href="' + p.shop_url + '" rel="nofollow">Shop ' + p.name + ' &rarr;</a>' +
+							'<a class="lprq__product-link" href="' + p.shop_url + '" rel="nofollow">Get ' + p.name + ' Shop ' + p.name + ' &rarr;rarr;</a>' +
 						'</div>' +
 					'</div>';
 			}
