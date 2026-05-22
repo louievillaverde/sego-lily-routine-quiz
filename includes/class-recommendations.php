@@ -37,45 +37,101 @@ class SLRQ_Recommendations {
 		$is_sensitive  = ( $skin_concern === 'Redness & sensitivity' );
 		$is_simplifier = in_array( $frustration, array( 'Too many products', 'Just want something simple' ), true );
 
+		$why = self::why_for( $skin_concern, $frustration );
+
 		switch ( $skin_concern ) {
 
 			case 'Wrinkles & dark spots':
 				return array(
 					'primary'   => self::ageless( $is_sensitive ? 'rosewood-lavender' : 'honey-creme' ),
 					'secondary' => self::renewal( 'unscented' ),
-					'why'       => $is_sensitive
-						? 'Reactive skin can&rsquo;t handle the actives most anti-aging products rely on. Tallow rebuilds your skin&rsquo;s lipid barrier without irritation, because your skin recognizes it as its own. Softer texture, no flare-ups, in 4 to 6 weeks.'
-						: 'Here&rsquo;s what nobody tells you about wrinkles: your skin&rsquo;s lipid production drops ~30% after 35. Lab actives can&rsquo;t replace those lipids, but tallow can, because your skin reads it as its own. Most see softer texture in 4 to 6 weeks.',
+					'why'       => $why,
 				);
 
 			case 'Dryness & tightness':
 				return array(
 					'primary'   => self::renewal( 'mandarin-orange' ),
 					'secondary' => self::ageless( $is_sensitive ? 'rosewood-lavender' : 'honey-creme' ),
-					'why'       => 'Most moisturizers fail on dry skin because they&rsquo;re water-based, and water evaporates. Your skin needs the fats that hold water IN. Tallow is mostly those fats. It absorbs in 30 seconds and locks moisture for 8 hours.',
+					'why'       => $why,
 				);
 
 			case 'Redness & sensitivity':
 				return array(
 					'primary'   => self::renewal( 'unscented' ),
 					'secondary' => self::ageless( 'rosewood-lavender' ),
-					'why'       => 'Reactive skin doesn&rsquo;t mean your skin is broken. It means it can identify foreign ingredients fast. Most products have 15 to 30 of them. Renewal Unscented has 5, all food-grade. Safe even for newborns and post-procedure skin.',
+					'why'       => $why,
 				);
 
 			case 'Breakouts':
 				return array(
 					'primary'   => self::renewal( 'unscented' ),
 					'secondary' => self::ageless( 'honey-creme' ),
-					'why'       => 'Adult breakouts are usually a barrier problem, not an oil problem. When your barrier is inflamed, your skin overproduces oil to compensate, and the cycle continues. Tallow calms the barrier and is non-comedogenic, so it won&rsquo;t add to the problem.',
+					'why'       => $why,
 				);
 
 			default:
 				return array(
 					'primary'   => self::ageless( 'honey-creme' ),
 					'secondary' => self::renewal( 'unscented' ),
-					'why'       => 'A clean two-product routine that fits most starting points. Ageless rebuilds your lipid barrier through the day. Renewal locks in deeper moisture overnight.',
+					'why'       => $why,
 				);
 		}
+	}
+
+	/**
+	 * Per-combination "why" copy. 4 skin concerns x 4 frustrations = 16
+	 * variants. Each opens by validating the frustration, then explains the
+	 * mechanism specific to the concern, then closes with a number or
+	 * timeline. No age callouts (the user has already self-selected, no
+	 * need to gate by birth year).
+	 */
+	private static function why_for( $skin_concern, $frustration ) {
+		$map = array(
+			'Wrinkles & dark spots' => array(
+				'Nothing works long enough'   => 'Most anti-aging products work for a few hours then quit on you. Your skin&rsquo;s lipid production has been declining, and lab actives can&rsquo;t refill those lipids long-term. Tallow can, because your skin reads it as its own. Softer texture in 4 to 6 weeks, sustained.',
+				'Too many products'           => 'You&rsquo;re trying to fight a biology problem with shelf volume. Your skin stopped making the lipids that keep it firm. Layering 6 actives doesn&rsquo;t replace what&rsquo;s missing. Two jars of the right thing does.',
+				"Don't trust ingredients"     => 'Most anti-aging products list 15+ ingredients you can&rsquo;t pronounce. Your skin doesn&rsquo;t recognize them, which is why they don&rsquo;t last. Tallow is structurally identical to your skin&rsquo;s own lipids. Softer texture in 4 to 6 weeks.',
+				'Just want something simple'  => 'The whole anti-aging story is simpler than the industry makes it. Your skin stopped making the lipids that keep it firm. Tallow puts them back. Two jars, twice a day.',
+			),
+			'Dryness & tightness' => array(
+				'Nothing works long enough'   => 'Most moisturizers wear off in a few hours. They&rsquo;re water-based, and water evaporates. Your skin needs the fats that hold moisture in. Tallow is mostly those fats. It absorbs in 30 seconds and stays for 8 hours.',
+				'Too many products'           => 'You don&rsquo;t need a 6-step routine. You need one product that actually moisturizes. Most lotions are water-based and evaporate. Tallow is mostly fats your skin recognizes and stays for 8 hours.',
+				"Don't trust ingredients"     => 'Most moisturizers list 20+ ingredients, most of them solvents and stabilizers. Your skin needs the fats that hold water in, not the chemistry holding the formula together. Renewal has 5 ingredients, no fillers.',
+				'Just want something simple'  => 'Tight skin means your barrier can&rsquo;t hold moisture. The fix is fats your skin recognizes, not more products. Tallow absorbs in 30 seconds and locks moisture for 8 hours. Two jars.',
+			),
+			'Redness & sensitivity' => array(
+				'Nothing works long enough'   => 'If most products start fine then your skin reacts a few days in, the issue is ingredient overload. Renewal Unscented has 5 ingredients, all food-grade. Nothing reactive to build up. Safe even for newborns.',
+				'Too many products'           => 'Reactive skin doesn&rsquo;t need more products. It needs fewer ingredients. Most products have 15 to 30 of them. Renewal Unscented has 5, all food-grade.',
+				"Don't trust ingredients"     => 'Reactive skin reacts because it identifies foreign ingredients fast. Most products have 15 to 30 of them. Renewal Unscented has 5: tallow, a touch of organic oil, vitamin E, that&rsquo;s it. Safe for newborns, rosacea, post-procedure.',
+				'Just want something simple'  => 'The simplest answer for reactive skin is the fewest ingredients possible. Renewal Unscented has 5, all food-grade. Safe for newborns and rosacea. One jar covers most situations.',
+			),
+			'Breakouts' => array(
+				'Nothing works long enough'   => 'If your acne products work for a week then your skin flares again, the issue is your barrier. Stripping treatments calm breakouts short-term but inflame the barrier long-term. Tallow calms without stripping and is non-comedogenic.',
+				'Too many products'           => 'You don&rsquo;t need 5 acne products. Most acne routines inflame your barrier, which makes oil overproduction worse. Tallow calms the barrier and won&rsquo;t clog pores.',
+				"Don't trust ingredients"     => 'Most acne products list harsh actives and stabilizers your skin reacts to. Tallow is one ingredient, structurally identical to what your skin makes. Non-comedogenic. Calms inflammation instead of triggering it.',
+				'Just want something simple'  => 'Adult breakouts are usually a barrier problem, not an oil problem. The simplest fix: stop using actives that inflame the barrier. Tallow calms and won&rsquo;t clog pores.',
+			),
+		);
+
+		$default = 'A clean two-product routine that fits most starting points. Ageless rebuilds your lipid barrier through the day. Renewal locks in deeper moisture overnight.';
+
+		if ( ! isset( $map[ $skin_concern ] ) ) {
+			return $default;
+		}
+		$concern_map = $map[ $skin_concern ];
+		if ( isset( $concern_map[ $frustration ] ) ) {
+			return $concern_map[ $frustration ];
+		}
+		// Frustration may carry curly apostrophe ('Don’t') or HTML entity.
+		// Normalize both sides for a tolerant lookup.
+		$normalized = str_replace( array( "\xE2\x80\x99", "&rsquo;" ), "'", $frustration );
+		foreach ( $concern_map as $key => $value ) {
+			$norm_key = str_replace( array( "\xE2\x80\x99", "&rsquo;" ), "'", $key );
+			if ( $norm_key === $normalized ) {
+				return $value;
+			}
+		}
+		return reset( $concern_map );
 	}
 
 	private static function ageless( $scent ) {
