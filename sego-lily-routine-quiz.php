@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.22
+ * Version:           1.13.23
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.22' );
+define( 'SLRQ_VERSION', '1.13.23' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -219,6 +219,129 @@ add_action( 'wp_loaded', function() {
 	wp_safe_redirect( $cart_url );
 	exit;
 }, 20 );
+
+/**
+ * AJAX add-to-cart for the quiz results page. Mirrors the wp_loaded
+ * redirect endpoint but returns JSON instead of redirecting, so the
+ * site's side-drawer cart can pop open in place via the standard
+ * WooCommerce `added_to_cart` jQuery event. This matches the rest of
+ * Holly's site UX (no separate cart page; everything lives in the
+ * side drawer).
+ *
+ * Request:  POST /wp-admin/admin-ajax.php?action=lprq_add_to_cart
+ *           nonce=...  (the lprq_quiz nonce)
+ *           cart_action=add_one | add_routine
+ *           For add_one:    slug, scent
+ *           For add_routine: p_slug, p_scent, s_slug, s_scent
+ *
+ * Response: { success: true, data: { fragments, cart_hash, cart_count } }
+ *           Fragments include the cart-icon-bubble HTML so the site
+ *           header updates automatically. The client then fires the
+ *           `added_to_cart` event which every modern WC side-cart
+ *           plugin listens for to open its drawer.
+ */
+add_action( 'wp_ajax_lprq_add_to_cart',        'slrq_ajax_add_to_cart' );
+add_action( 'wp_ajax_nopriv_lprq_add_to_cart', 'slrq_ajax_add_to_cart' );
+function slrq_ajax_add_to_cart() {
+	check_ajax_referer( 'lprq_quiz', 'nonce' );
+
+	if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+		wp_send_json_error( array( 'message' => 'Cart not available' ) );
+	}
+
+	$cart_action = sanitize_text_field( wp_unslash( $_POST['cart_action'] ?? '' ) );
+	if ( ! in_array( $cart_action, array( 'add_one', 'add_routine' ), true ) ) {
+		wp_send_json_error( array( 'message' => 'Invalid action' ) );
+	}
+
+	if ( $cart_action === 'add_one' ) {
+		$items = array(
+			array(
+				'slug'  => sanitize_text_field( wp_unslash( $_POST['slug']  ?? '' ) ),
+				'scent' => sanitize_text_field( wp_unslash( $_POST['scent'] ?? '' ) ),
+			),
+		);
+	} else {
+		$items = array(
+			array(
+				'slug'  => sanitize_text_field( wp_unslash( $_POST['p_slug']  ?? '' ) ),
+				'scent' => sanitize_text_field( wp_unslash( $_POST['p_scent'] ?? '' ) ),
+			),
+			array(
+				'slug'  => sanitize_text_field( wp_unslash( $_POST['s_slug']  ?? '' ) ),
+				'scent' => sanitize_text_field( wp_unslash( $_POST['s_scent'] ?? '' ) ),
+			),
+		);
+	}
+
+	$added = false;
+	foreach ( $items as $item ) {
+		if ( empty( $item['slug'] ) ) {
+			continue;
+		}
+		$post = get_page_by_path( $item['slug'], OBJECT, 'product' );
+		if ( ! $post ) {
+			continue;
+		}
+		$product = wc_get_product( $post->ID );
+		if ( ! $product ) {
+			continue;
+		}
+
+		if ( $product->is_type( 'simple' ) || $product->is_type( 'subscription' ) ) {
+			if ( WC()->cart->add_to_cart( $product->get_id() ) ) {
+				$added = true;
+			}
+			continue;
+		}
+
+		if ( $product->is_type( 'variable' ) || $product->is_type( 'variable-subscription' ) ) {
+			$variation_id   = 0;
+			$matched_attrs  = array();
+			$target_scent   = $item['scent'];
+			$target_size    = '2 oz.';
+			$target_payment = 'One-Time Purchase';
+			foreach ( $product->get_available_variations() as $v ) {
+				$attrs = $v['attributes'] ?? array();
+				$scent_match   = empty( $target_scent ) || ( isset( $attrs['attribute_scent'] ) && strcasecmp( $attrs['attribute_scent'], $target_scent ) === 0 );
+				$size_match    = ! isset( $attrs['attribute_size'] ) || strcasecmp( $attrs['attribute_size'], $target_size ) === 0;
+				$payment_match = ! isset( $attrs['attribute_payment-options'] ) || stripos( $attrs['attribute_payment-options'], 'one-time' ) !== false;
+				if ( $scent_match && $size_match && $payment_match ) {
+					$variation_id  = $v['variation_id'];
+					$matched_attrs = $attrs;
+					break;
+				}
+			}
+			if ( $variation_id && WC()->cart->add_to_cart( $product->get_id(), 1, $variation_id, $matched_attrs ) ) {
+				$added = true;
+			}
+		}
+	}
+
+	if ( ! $added ) {
+		wp_send_json_error( array( 'message' => 'Could not add to cart' ) );
+	}
+
+	WC()->cart->calculate_totals();
+	if ( method_exists( WC()->cart, 'set_session' ) ) {
+		WC()->cart->set_session();
+	}
+
+	// WC fragments for the cart icon bubble + any other registered fragments
+	// in the site header. Standard pattern, same as WC's native AJAX add.
+	ob_start();
+	woocommerce_mini_cart();
+	$mini_cart = ob_get_clean();
+	$fragments = apply_filters( 'woocommerce_add_to_cart_fragments', array(
+		'div.widget_shopping_cart_content' => '<div class="widget_shopping_cart_content">' . $mini_cart . '</div>',
+	) );
+
+	wp_send_json_success( array(
+		'fragments'  => $fragments,
+		'cart_hash'  => WC()->cart->get_cart_hash(),
+		'cart_count' => WC()->cart->get_cart_contents_count(),
+	) );
+}
 
 /**
  * Per-skin-concern testimonials, pulled from real verified customer reviews

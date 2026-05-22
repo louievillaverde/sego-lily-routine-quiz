@@ -664,6 +664,85 @@ class SLRQ_Quiz {
 				}
 			});
 
+			// Intercept cart-add CTA clicks: instead of navigating to /cart/,
+			// add the products via AJAX and trigger the site's side-drawer cart
+			// to open via the standard `added_to_cart` event. Matches the rest
+			// of the site UX (no separate cart page; side drawer everywhere).
+			// Falls back to plain navigation if the AJAX call fails or jQuery
+			// isn't available (extremely rare on a WooCommerce site).
+			var ajaxUrl   = '<?php echo esc_url_raw( admin_url( 'admin-ajax.php' ) ); ?>';
+			var ajaxNonce = '<?php echo esc_js( wp_create_nonce( 'lprq_quiz' ) ); ?>';
+			document.addEventListener('click', function(e) {
+				var btn = e.target.closest && e.target.closest('.lprq__product-link, .lprq__add-both');
+				if (!btn) return;
+				var href = btn.getAttribute('href') || '';
+				if (href.indexOf('slrq_action=') === -1) return; // not a cart-add link
+				e.preventDefault();
+
+				var originalHtml = btn.innerHTML;
+				if (btn.dataset.lprqBusy === '1') return;
+				btn.dataset.lprqBusy = '1';
+				btn.style.opacity = '0.7';
+				btn.style.pointerEvents = 'none';
+				btn.innerHTML = 'Adding…';
+
+				// Parse query params from the existing fallback href.
+				var url = new URL(href, window.location.origin);
+				var params = url.searchParams;
+				var slrqAction = params.get('slrq_action');
+
+				var fd = new FormData();
+				fd.append('action', 'lprq_add_to_cart');
+				fd.append('nonce',  ajaxNonce);
+				fd.append('cart_action', slrqAction);
+				if (slrqAction === 'add_one') {
+					fd.append('slug',  params.get('slug')  || '');
+					fd.append('scent', params.get('scent') || '');
+				} else if (slrqAction === 'add_routine') {
+					fd.append('p_slug',  params.get('p_slug')  || '');
+					fd.append('p_scent', params.get('p_scent') || '');
+					fd.append('s_slug',  params.get('s_slug')  || '');
+					fd.append('s_scent', params.get('s_scent') || '');
+				}
+
+				fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+					.then(function(r) { return r.json(); })
+					.then(function(data) {
+						if (!data || !data.success) {
+							// Server-side rejection: navigate to the fallback URL so the
+							// user still ends up somewhere actionable.
+							window.location.href = href;
+							return;
+						}
+						// Replace WC fragments (cart icon count, mini cart contents).
+						if (window.jQuery && data.data && data.data.fragments) {
+							jQuery.each(data.data.fragments, function(selector, html) {
+								jQuery(selector).replaceWith(html);
+							});
+							// Trigger the universal WC event that every side-cart
+							// plugin (Cart Drawer for WC, XOO Aside Cart, FunnelKit,
+							// theme-built drawers) listens for to open the drawer.
+							jQuery(document.body).trigger('added_to_cart', [
+								data.data.fragments,
+								data.data.cart_hash,
+								jQuery(btn)
+							]);
+							jQuery(document.body).trigger('wc_fragment_refresh');
+						}
+						btn.innerHTML = 'Added ✓';
+						setTimeout(function() {
+							btn.innerHTML = originalHtml;
+							btn.style.opacity = '';
+							btn.style.pointerEvents = '';
+							delete btn.dataset.lprqBusy;
+						}, 1800);
+					})
+					.catch(function() {
+						// Network error or other failure: navigate to the fallback URL.
+						window.location.href = href;
+					});
+			});
+
 			// Resume quiz from a recent saved state (within 24h)
 			var resumeStep = restoreProgress();
 			if (resumeStep) {
