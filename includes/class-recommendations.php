@@ -25,19 +25,19 @@ class SLRQ_Recommendations {
 	 * @param string $frustration   Frustration answer.
 	 * @return array { primary, secondary, why }
 	 */
-	public static function pair_for( $skin_concern, $frustration = '' ) {
-		$default = self::default_pair( $skin_concern, $frustration );
+	public static function pair_for( $skin_concern, $frustration = '', $product_count = '' ) {
+		$default = self::default_pair( $skin_concern, $frustration, $product_count );
 		$primary_id   = $default['primary']['product_id']   ?? 0;
 		$secondary_id = $default['secondary']['product_id'] ?? 0;
 		$default['add_both_url'] = self::add_routine_url( $primary_id, $secondary_id );
 		return apply_filters( 'lprq_recommendation', $default, $skin_concern, $frustration );
 	}
 
-	private static function default_pair( $skin_concern, $frustration ) {
+	private static function default_pair( $skin_concern, $frustration, $product_count = '' ) {
 		$is_sensitive  = ( $skin_concern === 'Redness & sensitivity' );
 		$is_simplifier = in_array( $frustration, array( 'Too many products', 'Just want something simple' ), true );
 
-		$why = self::why_for( $skin_concern, $frustration );
+		$why = self::why_for( $skin_concern, $frustration, $product_count );
 
 		switch ( $skin_concern ) {
 
@@ -92,7 +92,7 @@ class SLRQ_Recommendations {
 	 * the mechanism, then introduces the products as the no-brainer answer.
 	 * Both products are named explicitly. No em dashes. No age callouts.
 	 */
-	private static function why_for( $skin_concern, $frustration ) {
+	private static function why_for( $skin_concern, $frustration, $product_count = '' ) {
 		$map = array(
 			'Wrinkles & dark spots' => array(
 				'Nothing works long enough'   => 'You buy the cream. It works for a few weeks. Your skin slides back. You try another, same pattern. The issue isn&rsquo;t your routine, it&rsquo;s the chemistry: stabilized actives can&rsquo;t replace the lipids your skin actually needs. <strong>Ageless Honey Creme</strong> is whipped tallow rich in vitamins A, D, E, K, the exact nutrients your skin&rsquo;s been making less of. <strong>Renewal Mandarin Orange</strong> at night locks it in. Softer texture in 4 to 6 weeks.',
@@ -126,18 +126,43 @@ class SLRQ_Recommendations {
 			return $default;
 		}
 		$concern_map = $map[ $skin_concern ];
-		if ( isset( $concern_map[ $frustration ] ) ) {
-			return $concern_map[ $frustration ];
-		}
+
 		// Normalize curly apostrophe / HTML entity for tolerant lookup.
 		$normalized = str_replace( array( "\xE2\x80\x99", "&rsquo;" ), "'", $frustration );
-		foreach ( $concern_map as $key => $value ) {
-			$norm_key = str_replace( array( "\xE2\x80\x99", "&rsquo;" ), "'", $key );
-			if ( $norm_key === $normalized ) {
-				return $value;
+		$matched    = null;
+		if ( isset( $concern_map[ $frustration ] ) ) {
+			$matched = $concern_map[ $frustration ];
+		} else {
+			foreach ( $concern_map as $key => $value ) {
+				$norm_key = str_replace( array( "\xE2\x80\x99", "&rsquo;" ), "'", $key );
+				if ( $norm_key === $normalized ) {
+					$matched = $value;
+					break;
+				}
 			}
 		}
-		return reset( $concern_map );
+		if ( $matched === null ) {
+			$matched = reset( $concern_map );
+		}
+		return $matched . self::product_count_tail( $product_count );
+	}
+
+	/**
+	 * Append a personalized closing line based on the customer's stated
+	 * product count. Different shelves need different framings of the
+	 * "two jars" answer. Empty string if no product_count signal.
+	 */
+	private static function product_count_tail( $product_count ) {
+		switch ( $product_count ) {
+			case '1-3':
+				return ' Since you keep it minimal already, this slots in without adding steps.';
+			case '4-6':
+				return ' These two consolidate the half of your shelf that&rsquo;s doing the actual work.';
+			case '7+':
+				return ' These two replace most of what&rsquo;s on your shelf right now.';
+			default:
+				return '';
+		}
 	}
 	private static function ageless( $scent ) {
 		$scents = array(
