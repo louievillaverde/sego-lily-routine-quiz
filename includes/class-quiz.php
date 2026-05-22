@@ -136,6 +136,9 @@ class SLRQ_Quiz {
 		.lprq__pairs-text strong { font-weight: 600; color: #2C2C2C; font-size: 15px; line-height: 1.3; }
 		.lprq__pairs-cta { font-size: 13px; color: #628393; text-decoration: underline; text-underline-offset: 3px; font-weight: 400; letter-spacing: normal; }
 		.lprq__pairs-thumb { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #ffffff; border: 1px solid #E8E2D6; }
+		.lprq__shop-all { text-align: center; margin: 24px 0 0; }
+		.lprq__shop-all a { color: #8A9499; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; font-style: italic; }
+		.lprq__shop-all a:hover { color: #386174; }
 		.lprq__pairs-add-both { display: block; margin: 14px auto 0; padding: 11px 18px; background: #386174; color: #ffffff !important; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; text-align: center; letter-spacing: 0.3px; transition: all 0.15s ease; max-width: 280px; }
 		.lprq__pairs-add-both:hover { background: #2a4a5a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56, 97, 116, 0.2); }
 		.lprq__privacy { font-size: 13px; color: #8A9499; line-height: 1.5; margin: 10px 0 16px; text-align: center; font-style: italic; }
@@ -231,6 +234,7 @@ class SLRQ_Quiz {
 							<p class="lprq__results-why" id="lprq-result-why"></p>
 							<div id="lprq-result-primary"></div>
 							<div class="lprq__pairs-note" id="lprq-result-pairs"></div>
+							<div class="lprq__shop-all"><a href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">Or shop the full line &rarr;</a></div>
 							<?php
 							$callout = apply_filters( 'lprq_results_callout', '' );
 							if ( ! empty( $callout ) ) {
