@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.25
+ * Version:           1.13.26
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.25' );
+define( 'SLRQ_VERSION', '1.13.26' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -210,12 +210,13 @@ add_action( 'wp_loaded', function() {
 			WC()->cart->set_session();
 		}
 	}
-	// Skip /cart/ and go straight to /checkout/. Matches the side-drawer
-	// flow on Holly's site (drawer -> CHECKOUT button -> /checkout). The
-	// quiz customer just saw the recommendation, clicked the add CTA, so
-	// the intermediate cart review is redundant. Override via filter if
-	// a future client needs a different post-add destination.
-	$redirect_url = apply_filters( 'lprq_post_add_redirect_url', wc_get_checkout_url() );
+	// Redirect to /cart/ so the customer can review what they're getting +
+	// the total before entering shipping details. Cart page should use the
+	// classic [woocommerce_cart] shortcode (mobile-responsive, has a built-in
+	// Proceed to Checkout button). The new WC Cart Block has known mobile
+	// layout issues. Override via filter if a future client needs a
+	// different post-add destination (e.g., wc_get_checkout_url() to skip).
+	$redirect_url = apply_filters( 'lprq_post_add_redirect_url', wc_get_cart_url() );
 	if ( ! empty( $_GET['cta_id'] ) ) {
 		$redirect_url = add_query_arg( 'cta_id', sanitize_text_field( wp_unslash( $_GET['cta_id'] ) ), $redirect_url );
 	}
