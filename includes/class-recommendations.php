@@ -176,9 +176,10 @@ class SLRQ_Recommendations {
 			'slug'              => 'ageless-' . $scent,
 			'name'              => 'Ageless Tallow Butter',
 			'scent'             => $scent_lbl,
-			'blurb'             => 'Anti-aging. Face, body, hands.',
+			'blurb'             => 'Anti-aging &middot; Day &middot; Night &middot; Body',
+			'badge'             => 'Bestseller',
 			'shop_url'          => $pdp_url,
-			'add_to_cart_url'   => $pdp_url,
+			'add_to_cart_url'   => self::add_one_url( $wc_slug, $scent_lbl ),
 			'product_id'        => $wc_id,
 			'image_url'         => apply_filters( 'lprq_product_image', '', 'ageless', $scent ),
 		);
@@ -191,8 +192,6 @@ class SLRQ_Recommendations {
 			'cherry'            => 'Cherry',
 			'unscented'         => 'Unscented',
 		);
-		// Unscented = baby-mom-pure-butter (separate WC product). Other scents
-		// = renewal-tallow-butter with scent pre-selected.
 		$is_unscented = ( $scent === 'unscented' );
 		$wc_slug      = $is_unscented ? 'baby-mom-pure-butter' : 'renewal-tallow-butter';
 		$name         = $is_unscented ? 'Baby + Mom Pure Butter' : 'Renewal Tallow Butter';
@@ -200,13 +199,18 @@ class SLRQ_Recommendations {
 		$scent_lbl    = $scents[ $scent ] ?? 'Unscented';
 		$query        = $is_unscented ? array() : array( 'attribute_scent' => $scent_lbl );
 		$pdp_url      = self::pdp_url( $wc_slug, $query );
+		$blurb        = $is_unscented
+			? 'Sensitive &middot; Post-procedure &middot; Newborn safe'
+			: 'Daily moisture &middot; Hydration &middot; Calming';
+		$badge        = $is_unscented ? 'Gentlest' : 'Top-rated';
 		return array(
 			'slug'              => 'renewal-' . $scent,
 			'name'              => $name,
 			'scent'             => $scent_lbl,
-			'blurb'             => 'Daily moisture. Tone, texture, problem skin.',
+			'blurb'             => $blurb,
+			'badge'             => $badge,
 			'shop_url'          => $pdp_url,
-			'add_to_cart_url'   => $pdp_url,
+			'add_to_cart_url'   => self::add_one_url( $wc_slug, $is_unscented ? '' : $scent_lbl ),
 			'product_id'        => $wc_id,
 			'image_url'         => apply_filters( 'lprq_product_image', '', 'renewal', $scent ),
 		);
@@ -280,6 +284,23 @@ class SLRQ_Recommendations {
 	 * Internal slugs are like 'ageless-honey-creme', 'renewal-unscented'.
 	 * WC product slugs are the parent product, e.g. 'ageless-tallow-butter'.
 	 */
+	/**
+	 * Single-product direct-cart URL.
+	 */
+	public static function add_one_url( $wc_slug, $scent = '' ) {
+		if ( empty( $wc_slug ) ) {
+			return home_url( '/shop/' );
+		}
+		return add_query_arg(
+			array(
+				'slrq_action' => 'add_one',
+				'slug'        => $wc_slug,
+				'scent'       => $scent,
+			),
+			home_url( '/' )
+		);
+	}
+
 	private static function wc_slug_for( $internal_slug ) {
 		if ( strpos( $internal_slug, 'ageless-' ) === 0 ) {
 			return 'ageless-tallow-butter';

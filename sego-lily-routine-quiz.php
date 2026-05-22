@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.5
+ * Version:           1.13.6
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.5' );
+define( 'SLRQ_VERSION', '1.13.6' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -113,28 +113,50 @@ add_filter( 'lprq_product_image', function( $url, $product, $scent ) {
 }, 10, 3 );
 
 /**
- * "Add both to my routine" endpoint.
- * Intercepts /?slrq_action=add_routine&p=PRIMARY_ID&s=SECONDARY_ID
- * Adds both products to the WooCommerce cart, then redirects to /cart/.
+ * Cart-add endpoints driven by the quiz results page.
+ *
+ * Two actions handled, both via wp_loaded so WC()->cart is ready:
+ *   slrq_action=add_routine  &p_slug=...&p_scent=...&s_slug=...&s_scent=...
+ *     Adds primary + secondary product variations to the cart.
+ *   slrq_action=add_one      &slug=...&scent=...
+ *     Adds a single product variation to the cart.
+ *
+ * Both resolve the variation by scent + default size (2 oz.) + default payment
+ * (One-Time Purchase), then call WC()->cart->add_to_cart with the variation_id
+ * and full attribute array — the WC-native pattern for variable products.
+ * Redirects to /cart/ when done.
  */
 add_action( 'wp_loaded', function() {
-	if ( ! isset( $_GET['slrq_action'] ) || $_GET['slrq_action'] !== 'add_routine' ) {
+	if ( ! isset( $_GET['slrq_action'] ) ) {
+		return;
+	}
+	$action = $_GET['slrq_action'];
+	if ( ! in_array( $action, array( 'add_routine', 'add_one' ), true ) ) {
 		return;
 	}
 	if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
 		return;
 	}
 
-	$items = array(
-		array(
-			'slug'  => isset( $_GET['p_slug'] ) ? sanitize_text_field( wp_unslash( $_GET['p_slug'] ) ) : '',
-			'scent' => isset( $_GET['p_scent'] ) ? sanitize_text_field( wp_unslash( $_GET['p_scent'] ) ) : '',
-		),
-		array(
-			'slug'  => isset( $_GET['s_slug'] ) ? sanitize_text_field( wp_unslash( $_GET['s_slug'] ) ) : '',
-			'scent' => isset( $_GET['s_scent'] ) ? sanitize_text_field( wp_unslash( $_GET['s_scent'] ) ) : '',
-		),
-	);
+	if ( $action === 'add_one' ) {
+		$items = array(
+			array(
+				'slug'  => isset( $_GET['slug'] ) ? sanitize_text_field( wp_unslash( $_GET['slug'] ) ) : '',
+				'scent' => isset( $_GET['scent'] ) ? sanitize_text_field( wp_unslash( $_GET['scent'] ) ) : '',
+			),
+		);
+	} else {
+		$items = array(
+			array(
+				'slug'  => isset( $_GET['p_slug'] ) ? sanitize_text_field( wp_unslash( $_GET['p_slug'] ) ) : '',
+				'scent' => isset( $_GET['p_scent'] ) ? sanitize_text_field( wp_unslash( $_GET['p_scent'] ) ) : '',
+			),
+			array(
+				'slug'  => isset( $_GET['s_slug'] ) ? sanitize_text_field( wp_unslash( $_GET['s_slug'] ) ) : '',
+				'scent' => isset( $_GET['s_scent'] ) ? sanitize_text_field( wp_unslash( $_GET['s_scent'] ) ) : '',
+			),
+		);
+	}
 
 	$added = false;
 	foreach ( $items as $item ) {
