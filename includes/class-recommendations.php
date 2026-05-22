@@ -27,9 +27,8 @@ class SLRQ_Recommendations {
 	 */
 	public static function pair_for( $skin_concern, $frustration = '', $product_count = '' ) {
 		$default = self::default_pair( $skin_concern, $frustration, $product_count );
-		$primary_id   = $default['primary']['product_id']   ?? 0;
-		$secondary_id = $default['secondary']['product_id'] ?? 0;
-		$default['add_both_url'] = self::add_routine_url( $primary_id, $secondary_id );
+		// add_both_url removed in v1.13.0 — Holly's variable-subscription
+		// products don't support multi-product URL cart-add.
 		return apply_filters( 'lprq_recommendation', $default, $skin_concern, $frustration );
 	}
 
@@ -171,15 +170,17 @@ class SLRQ_Recommendations {
 			'citrus-breeze'     => 'Citrus Breeze',
 			'mango'             => 'Mango',
 		);
-		$wc_slug = 'ageless-tallow-butter';
-		$wc_id   = self::wc_product_id( $wc_slug );
+		$wc_slug   = 'ageless-tallow-butter';
+		$wc_id     = self::wc_product_id( $wc_slug );
+		$scent_lbl = $scents[ $scent ] ?? 'Honey Creme';
+		$pdp_url   = self::pdp_url( $wc_slug, array( 'attribute_scent' => $scent_lbl ) );
 		return array(
 			'slug'              => 'ageless-' . $scent,
 			'name'              => 'Ageless Tallow Butter',
-			'scent'             => $scents[ $scent ] ?? 'Honey Creme',
+			'scent'             => $scent_lbl,
 			'blurb'             => 'Anti-aging. Face, body, hands.',
-			'shop_url'          => self::shop_url( $wc_slug ),
-			'add_to_cart_url'   => self::add_to_cart_url( $wc_id ),
+			'shop_url'          => $pdp_url,
+			'add_to_cart_url'   => $pdp_url,
 			'product_id'        => $wc_id,
 			'image_url'         => apply_filters( 'lprq_product_image', '', 'ageless', $scent ),
 		);
@@ -192,34 +193,50 @@ class SLRQ_Recommendations {
 			'cherry'            => 'Cherry',
 			'unscented'         => 'Unscented',
 		);
-		// Unscented is sold as a separate WC product (baby-mom-pure-butter), not a
-		// scent variation of renewal-tallow-butter. Route accordingly.
-		$wc_slug = ( $scent === 'unscented' ) ? 'baby-mom-pure-butter' : 'renewal-tallow-butter';
-		$name    = ( $scent === 'unscented' ) ? 'Baby + Mom Pure Butter' : 'Renewal Tallow Butter';
-		$wc_id   = self::wc_product_id( $wc_slug );
+		// Unscented = baby-mom-pure-butter (separate WC product). Other scents
+		// = renewal-tallow-butter with scent pre-selected.
+		$is_unscented = ( $scent === 'unscented' );
+		$wc_slug      = $is_unscented ? 'baby-mom-pure-butter' : 'renewal-tallow-butter';
+		$name         = $is_unscented ? 'Baby + Mom Pure Butter' : 'Renewal Tallow Butter';
+		$wc_id        = self::wc_product_id( $wc_slug );
+		$scent_lbl    = $scents[ $scent ] ?? 'Unscented';
+		$query        = $is_unscented ? array() : array( 'attribute_scent' => $scent_lbl );
+		$pdp_url      = self::pdp_url( $wc_slug, $query );
 		return array(
 			'slug'              => 'renewal-' . $scent,
 			'name'              => $name,
-			'scent'             => $scents[ $scent ] ?? 'Unscented',
+			'scent'             => $scent_lbl,
 			'blurb'             => 'Daily moisture. Tone, texture, problem skin.',
-			'shop_url'          => self::shop_url( $wc_slug ),
-			'add_to_cart_url'   => self::add_to_cart_url( $wc_id ),
+			'shop_url'          => $pdp_url,
+			'add_to_cart_url'   => $pdp_url,
 			'product_id'        => $wc_id,
 			'image_url'         => apply_filters( 'lprq_product_image', '', 'renewal', $scent ),
 		);
 	}
 
 	/**
-	 * Build the public product URL. WooCommerce default is /product/{slug}/.
+	 * Build a product PDP URL with optional pre-selected attributes.
+	 * Holly's products are variable-subscription, so a direct
+	 * ?add-to-cart=ID doesn't work (WC requires size + scent + payment
+	 * attributes). Pre-selecting scent in the URL lands the customer on
+	 * the PDP with the right variant highlighted; they pick size + payment
+	 * type, then add. Two clicks instead of one, but reliable.
+	 *
+	 * @param string $product_slug e.g. ageless-tallow-butter
+	 * @param array  $attrs        e.g. ['attribute_scent' => 'Honey Creme']
 	 */
-	private static function shop_url( $product_slug ) {
+	private static function pdp_url( $product_slug, $attrs = array() ) {
 		$url = home_url( '/product/' . $product_slug . '/' );
+		if ( ! empty( $attrs ) ) {
+			$url = add_query_arg( $attrs, $url );
+		}
 		return apply_filters( 'lprq_product_url', $url, $product_slug );
 	}
 
 	/**
 	 * Resolve a WC product slug → product ID via WP post lookup.
-	 * Caches the lookup in a static map for the request.
+	 * Kept around in case future client products are simple (cart-addable)
+	 * and we want to use the ID for direct cart integration.
 	 */
 	private static function wc_product_id( $product_slug ) {
 		static $cache = array();
@@ -233,36 +250,14 @@ class SLRQ_Recommendations {
 	}
 
 	/**
-	 * WC native add-to-cart URL.
-	 * WC's WC_Form_Handler::add_to_cart_action hooks on wp_loaded and
-	 * processes the `add-to-cart` query var on ANY page. Putting the param
-	 * on /cart/ directly is unreliable (cart page can render before the
-	 * cart-add logic completes). Putting it on home_url('/') is the canonical
-	 * WC pattern — WC adds the item, then redirects per the
-	 * "Redirect to cart after add" WC setting.
-	 */
-	private static function add_to_cart_url( $product_id ) {
-		if ( ! $product_id ) {
-			return home_url( '/cart/' );
-		}
-		return add_query_arg( 'add-to-cart', $product_id, home_url( '/' ) );
-	}
-
-	/**
-	 * Build the URL for the plugin&rsquo;s "add routine" endpoint that adds both
-	 * primary + secondary products in one request, then redirects to cart.
+	 * "Add both" link — for variable products this can't add to cart in one
+	 * shot (variations require attribute selection). For now this just links
+	 * to the primary product PDP. When clients have simple products, this
+	 * can route through the slrq_action=add_routine endpoint instead.
+	 *
+	 * @deprecated v1.13.0  Kept for backward compatibility with v1.10-v1.12.
 	 */
 	public static function add_routine_url( $primary_id, $secondary_id ) {
-		if ( ! $primary_id && ! $secondary_id ) {
-			return home_url( '/cart/' );
-		}
-		return add_query_arg(
-			array(
-				'slrq_action' => 'add_routine',
-				'p'           => (int) $primary_id,
-				's'           => (int) $secondary_id,
-			),
-			home_url( '/' )
-		);
+		return home_url( '/shop/' );
 	}
 }

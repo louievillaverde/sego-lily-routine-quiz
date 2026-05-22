@@ -459,7 +459,7 @@ class SLRQ_Quiz {
 				}
 				document.getElementById('lprq-result-why').innerHTML = payload.why || '';
 				renderPrimary(payload.primary);
-				renderSecondary(payload.secondary, payload.add_both_url);
+				renderSecondary(payload.secondary);
 				showStep('results');
 				if (typeof gtag === 'function') {
 					gtag('event', 'quiz_completed', { skin_concern: quizData.skin_concern });
@@ -482,21 +482,17 @@ class SLRQ_Quiz {
 							'<div class="lprq__product-name">' + p.name + '</div>' +
 							'<div class="lprq__product-scent">' + p.scent + '</div>' +
 							'<div class="lprq__product-blurb">' + p.blurb + '</div>' +
-							'<a class="lprq__product-link" href="' + (p.add_to_cart_url || p.shop_url) + '" rel="nofollow">Add to my routine\u00a0&rarr;</a>' +
+							'<a class="lprq__product-link" href="' + p.shop_url + '" rel="nofollow">Get ' + p.name + '\u00a0&rarr;</a>' +
 						'</div>' +
 					'</div>';
 			}
 
-			function renderSecondary(p, addBothUrl) {
+			function renderSecondary(p) {
 				var slot = document.getElementById('lprq-result-pairs');
 				if (!slot || !p) return;
-				var addBothHtml = addBothUrl
-					? '<a class="lprq__pairs-add-both" href="' + addBothUrl + '" rel="nofollow">Add both to my cart\u00a0&rarr;</a>'
-					: '';
 				slot.innerHTML =
 					'<span class="lprq__pairs-note-label">Pairs well with</span>' +
-					'<a href="' + (p.add_to_cart_url || p.shop_url) + '" rel="nofollow" class="lprq__pairs-link">' + (p.image_url ? '<img class="lprq__pairs-thumb" src="' + p.image_url + '" alt="' + p.name + '" loading="lazy" width="48" height="48" />' : '') + '<span class="lprq__pairs-text"><strong>' + p.name + '</strong><span class="lprq__pairs-cta">Add to routine\u00a0&rarr;</span></span></a>' +
-					addBothHtml;
+					'<a href="' + p.shop_url + '" rel="nofollow" class="lprq__pairs-link">' + (p.image_url ? '<img class="lprq__pairs-thumb" src="' + p.image_url + '" alt="' + p.name + '" loading="lazy" width="48" height="48" />' : '') + '<span class="lprq__pairs-text"><strong>' + p.name + '</strong><span class="lprq__pairs-cta">Get ' + p.name + '\u00a0&rarr;</span></span></a>';
 			}
 
 			// Resume quiz from a recent saved state (within 24h)
