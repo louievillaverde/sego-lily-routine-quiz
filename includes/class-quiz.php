@@ -115,7 +115,7 @@ class SLRQ_Quiz {
 		.lprq__results { text-align: center; }
 		.lprq__results-greeting { font-size: 14px; color: #8A9499; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 12px; }
 		.lprq__results-heading { font-size: 32px; font-weight: 600; margin: 0 0 16px; color: #2C2C2C; line-height: 1.3; }
-		.lprq__results-why { font-size: 16px; color: #4a5d68; line-height: 1.65; margin: 0 0 64px !important; padding: 24px 28px; background: #F7F6F3; border-radius: 12px; text-align: left; border-left: 4px solid #386174; display: block; }
+		.lprq__results-why { font-size: 16px; color: #4a5d68; line-height: 1.65; margin: 0 0 32px !important; padding: 24px 28px; background: #F7F6F3; border-radius: 12px; text-align: left; border-left: 4px solid #386174; display: block; }
 		.lprq__primary-product { background: #ffffff; border: 2px solid #386174; border-radius: 14px; padding: 32px; margin: 0 0 36px !important; margin-top: 0 !important; text-align: left; display: flex; gap: 28px; align-items: center; box-shadow: 0 6px 20px rgba(56, 97, 116, 0.10); }
 		#lprq-result-primary { display: block; margin-top: 0 !important; padding-top: 0 !important; }
 		#lprq-result-why + #lprq-result-primary { margin-top: 0; }
@@ -128,10 +128,6 @@ class SLRQ_Quiz {
 		.lprq__primary-product .lprq__product-blurb { font-size: 15px; color: #4a5d68; line-height: 1.6; margin: 0 0 28px; }
 		.lprq__primary-product .lprq__product-link { display: inline-block; padding: 13px 22px; font-size: 15px; font-weight: 600; background: #386174; color: #ffffff !important; text-decoration: none; border-radius: 8px; transition: all 0.15s ease; letter-spacing: 0.3px; }
 		.lprq__primary-product .lprq__product-link:hover { background: #2a4a5a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56, 97, 116, 0.25); }
-		.lprq__add-both { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 24px; background: #2C2C2C; color: #ffffff !important; border-radius: 12px; margin: 0 0 24px; text-decoration: none; transition: all 0.15s ease; box-shadow: 0 4px 16px rgba(44, 44, 44, 0.15); }
-		.lprq__add-both:hover { background: #1a1a1a; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(44, 44, 44, 0.25); }
-		.lprq__add-both-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #B8A98C; font-weight: 700; }
-		.lprq__add-both-cta { font-size: 17px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; }
 		.lprq__pairs-note { font-size: 15px; color: #4a5d68; text-align: center; margin: 0 0 32px; padding: 18px 22px; background: #FAFAF7; border-radius: 10px; line-height: 1.5; font-family: Georgia, 'Times New Roman', serif; border: 1px solid #E8E2D6; }
 		.lprq__pairs-note-label { display: block; font-size: 11px; color: #8A9499; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 10px; font-weight: 600; }
 		.lprq__pairs-link { display: inline-flex; align-items: center; gap: 14px; color: #386174 !important; font-weight: 600; text-decoration: none; padding: 10px 14px; border-radius: 8px; transition: background 0.15s ease; max-width: 100%; }
@@ -140,6 +136,8 @@ class SLRQ_Quiz {
 		.lprq__pairs-text strong { font-weight: 600; color: #2C2C2C; font-size: 15px; line-height: 1.3; }
 		.lprq__pairs-cta { font-size: 13px; color: #386174; text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
 		.lprq__pairs-thumb { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #ffffff; border: 1px solid #E8E2D6; }
+		.lprq__pairs-add-both { display: block; margin: 14px auto 0; padding: 11px 18px; background: #386174; color: #ffffff !important; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; text-align: center; letter-spacing: 0.3px; transition: all 0.15s ease; max-width: 280px; }
+		.lprq__pairs-add-both:hover { background: #2a4a5a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56, 97, 116, 0.2); }
 		.lprq__privacy { font-size: 13px; color: #8A9499; line-height: 1.5; margin: 10px 0 16px; text-align: center; font-style: italic; }
 		.lprq__callout { background: #386174; color: #ffffff; padding: 16px 20px; border-radius: 10px; margin: 0 0 24px; text-align: center; font-size: 15px; line-height: 1.5; font-family: Georgia, \'Times New Roman\', serif; }
 		.lprq__callout strong { font-weight: 700; }
@@ -232,7 +230,6 @@ class SLRQ_Quiz {
 							<h2 class="lprq__results-heading">Your match</h2>
 							<p class="lprq__results-why" id="lprq-result-why"></p>
 							<div id="lprq-result-primary"></div>
-							<div id="lprq-result-add-both"></div>
 							<div class="lprq__pairs-note" id="lprq-result-pairs"></div>
 							<?php
 							$callout = apply_filters( 'lprq_results_callout', '' );
@@ -462,8 +459,7 @@ class SLRQ_Quiz {
 				}
 				document.getElementById('lprq-result-why').innerHTML = payload.why || '';
 				renderPrimary(payload.primary);
-				renderAddBoth(payload);
-				renderSecondary(payload.secondary);
+				renderSecondary(payload.secondary, payload.add_both_url);
 				showStep('results');
 				if (typeof gtag === 'function') {
 					gtag('event', 'quiz_completed', { skin_concern: quizData.skin_concern });
@@ -491,22 +487,16 @@ class SLRQ_Quiz {
 					'</div>';
 			}
 
-			function renderAddBoth(payload) {
-				var slot = document.getElementById('lprq-result-add-both');
-				if (!slot || !payload.add_both_url) return;
-				slot.innerHTML =
-					'<a class="lprq__add-both" href="' + payload.add_both_url + '" rel="nofollow">' +
-						'<span class="lprq__add-both-label">Complete the routine</span>' +
-						'<span class="lprq__add-both-cta">Add both to my cart\u00a0&rarr;</span>' +
-					'</a>';
-			}
-
-			function renderSecondary(p) {
+			function renderSecondary(p, addBothUrl) {
 				var slot = document.getElementById('lprq-result-pairs');
 				if (!slot || !p) return;
+				var addBothHtml = addBothUrl
+					? '<a class="lprq__pairs-add-both" href="' + addBothUrl + '" rel="nofollow">Add both to my cart\u00a0&rarr;</a>'
+					: '';
 				slot.innerHTML =
 					'<span class="lprq__pairs-note-label">Pairs well with</span>' +
-					'<a href="' + (p.add_to_cart_url || p.shop_url) + '" rel="nofollow" class="lprq__pairs-link">' + (p.image_url ? '<img class="lprq__pairs-thumb" src="' + p.image_url + '" alt="' + p.name + '" loading="lazy" width="48" height="48" />' : '') + '<span class="lprq__pairs-text"><strong>' + p.name + '</strong><span class="lprq__pairs-cta">Add to routine\u00a0&rarr;</span></span></a>';
+					'<a href="' + (p.add_to_cart_url || p.shop_url) + '" rel="nofollow" class="lprq__pairs-link">' + (p.image_url ? '<img class="lprq__pairs-thumb" src="' + p.image_url + '" alt="' + p.name + '" loading="lazy" width="48" height="48" />' : '') + '<span class="lprq__pairs-text"><strong>' + p.name + '</strong><span class="lprq__pairs-cta">Add to routine\u00a0&rarr;</span></span></a>' +
+					addBothHtml;
 			}
 
 			// Resume quiz from a recent saved state (within 24h)
