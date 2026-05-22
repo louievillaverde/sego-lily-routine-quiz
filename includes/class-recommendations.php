@@ -52,7 +52,34 @@ class SLRQ_Recommendations {
 				'<strong>Moxie Intensive Moisture</strong>',
 				$default['why']
 			);
-			$default['why'] .= ' <em>(Holly built Moxie for thicker skin and beard areas with the same tallow base as the rest of the line.)</em>';
+			// Replace the now-orphaned generic pairing sentence with Moxie-specific
+			// reasoning. Mentions the real "for him" biology (thicker skin, beard
+			// areas, post-shave) so the secondary recommendation earns its spot.
+			$generic_pair_lines = array(
+				'<strong>Moxie Intensive Moisture</strong> at night to lock the work in while you sleep.',
+				'<strong>Moxie Intensive Moisture</strong> at night locks it in.',
+				'Pair it with <strong>Moxie Intensive Moisture</strong> at night to lock the work in while you sleep.',
+				'Pair it with <strong>Moxie Intensive Moisture</strong> at night locks it in.',
+				'<strong>Moxie Intensive Moisture</strong> on top reinforces the barrier overnight.',
+				'<strong>Moxie Intensive Moisture</strong> on top for texture repair.',
+				'<strong>Moxie Intensive Moisture</strong> supports texture repair.',
+				'<strong>Moxie Intensive Moisture</strong> at night reinforces.',
+				'<strong>Moxie Intensive Moisture</strong> at night reinforces the barrier while you sleep.',
+				'<strong>Moxie Intensive Moisture</strong> is similar.',
+			);
+			$moxie_pitch = '<strong>Moxie Intensive Moisture</strong> is built thicker on purpose. Holly designed it for facial skin under a beard, hands that actually work, and the heavier moisture most men&rsquo;s skin needs through the day. Same clean tallow base as the rest of the line, just denser.';
+			$replaced = false;
+			foreach ( $generic_pair_lines as $generic ) {
+				if ( strpos( $default['why'], $generic ) !== false ) {
+					$default['why'] = str_replace( $generic, $moxie_pitch, $default['why'] );
+					$replaced = true;
+					break;
+				}
+			}
+			if ( ! $replaced ) {
+				// Fallback: append the pitch if no generic line matched (defensive).
+				$default['why'] .= ' ' . $moxie_pitch;
+			}
 		}
 
 		// Build add_both_url with primary + secondary slugs + scents
