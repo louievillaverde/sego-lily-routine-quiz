@@ -160,6 +160,26 @@ class SLRQ_Quiz {
 		.lprq__reassurance { font-size: 14px; color: #628393; margin: 16px 0 0; text-align: center; line-height: 1.5; }
 		.lprq__signoff { font-size: 15px; color: #628393; font-style: italic; margin-top: 28px; }
 
+		.lprq__diagnostic { font-size: 15px; color: #4a5d68; font-style: italic; line-height: 1.55; margin: -8px 0 22px; text-align: center; max-width: 520px; margin-left: auto; margin-right: auto; text-wrap: balance; }
+		.lprq__diagnostic:empty { display: none; }
+
+		.lprq__product-name-link { color: inherit; text-decoration: none; border-bottom: 1px dotted transparent; transition: border-color 0.15s ease; }
+		.lprq__product-name-link:hover { border-bottom-color: #386174; color: #386174; }
+		.lprq__primary-product .lprq__product-image,
+		.lprq__pairs-thumb { cursor: zoom-in; transition: transform 0.15s ease; }
+		.lprq__primary-product .lprq__product-image:hover { transform: scale(1.02); }
+		.lprq__pairs-thumb:hover { transform: scale(1.06); }
+
+		.lprq__lightbox { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.86); display: none; align-items: center; justify-content: center; z-index: 99999; padding: 24px; cursor: zoom-out; }
+		.lprq__lightbox.is-open { display: flex; }
+		.lprq__lightbox-img { max-width: 92vw; max-height: 88vh; width: auto; height: auto; border-radius: 8px; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.4); cursor: default; }
+		.lprq__lightbox-close { position: absolute; top: 18px; right: 24px; background: transparent; border: none; color: #ffffff; font-size: 40px; line-height: 1; cursor: pointer; padding: 4px 12px; font-family: Georgia, 'Times New Roman', serif; }
+		.lprq__lightbox-close:hover { color: #E8DEC4; }
+
+		.lprq__save-pdf-row { text-align: center; margin: 28px 0 0; }
+		.lprq__save-pdf { background: transparent; border: 1px solid #B8A98C; color: #4a5d68; padding: 10px 22px; font-size: 13px; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.6px; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; }
+		.lprq__save-pdf:hover { background: #386174; color: #ffffff; border-color: #386174; }
+
 		@media (max-width: 540px) {
 			.lprq { padding: 28px 20px; }
 			.lprq__step h2 { font-size: 22px; margin: 0 0 24px; }
@@ -168,6 +188,21 @@ class SLRQ_Quiz {
 			.lprq__primary-product { flex-direction: column; gap: 20px; padding: 22px; text-align: center; }
 			.lprq__primary-product .lprq__product-image { width: 100%; min-width: 0; max-width: 240px; margin: 0 auto; }
 			.lprq__primary-product .lprq__product-body { text-align: left; }
+			.lprq__diagnostic { font-size: 14px; padding: 0 4px; }
+		}
+
+		@media print {
+			body * { visibility: hidden; }
+			.lprq, .lprq * { visibility: visible; }
+			.lprq { padding: 0; }
+			.lprq__step[data-step="results"] { display: block !important; }
+			.lprq__no-print, .lprq__shop-all, .lprq__callout { display: none !important; }
+			.lprq__product-link, .lprq__add-both { display: none !important; }
+			.lprq__primary-product { box-shadow: none; border: 1px solid #B8A98C; page-break-inside: avoid; }
+			.lprq__pairs-note { background: #ffffff; border: 1px solid #E8E2D6; page-break-inside: avoid; }
+			.lprq__results-why { background: #ffffff; border-left: 3px solid #386174; page-break-inside: avoid; }
+			.lprq__testimonial { page-break-inside: avoid; }
+			.lprq__lightbox { display: none !important; }
 		}
 		</style>
 
@@ -243,6 +278,7 @@ class SLRQ_Quiz {
 					<div class="lprq__step" data-step="results">
 						<div class="lprq__results">
 							<h2 class="lprq__results-heading" id="lprq-result-greeting">Your match</h2>
+							<p class="lprq__diagnostic" id="lprq-result-diagnostic"></p>
 							<?php
 							$cred = apply_filters( 'lprq_results_credibility', 'Built by Holly in Montana. Five food-grade ingredients. Made by hand.' );
 							if ( ! empty( $cred ) ) {
@@ -262,9 +298,16 @@ class SLRQ_Quiz {
 							?>
 							<p class="lprq__reassurance" id="lprq-reassurance"></p>
 							<p class="lprq__signoff"><?php echo esc_html( apply_filters( 'lprq_signoff', '' ) ); ?></p>
+							<div class="lprq__save-pdf-row lprq__no-print">
+								<button type="button" class="lprq__save-pdf" id="lprq-save-pdf">Save my routine as PDF</button>
+							</div>
 						</div>
 					</div>
 				</form>
+				<div class="lprq__lightbox" id="lprq-lightbox" role="dialog" aria-modal="true" aria-label="Product image preview">
+					<button type="button" class="lprq__lightbox-close" id="lprq-lightbox-close" aria-label="Close preview">&times;</button>
+					<img class="lprq__lightbox-img" id="lprq-lightbox-img" alt="" />
+				</div>
 
 			</div>
 		</div>
@@ -477,6 +520,10 @@ class SLRQ_Quiz {
 				clearProgress();
 				window.lprqAddBothUrl = payload.add_both_url || '';
 				document.getElementById('lprq-result-greeting').textContent = quizData.firstname ? 'Your match, ' + quizData.firstname : 'Your match';
+				var diag = document.getElementById('lprq-result-diagnostic');
+				if (diag) {
+					diag.innerHTML = payload.diagnostic || '';
+				}
 				var reass = document.getElementById('lprq-reassurance');
 				if (reass) {
 					reass.textContent = 'Saved your match. I’ll check in via email.';
@@ -509,16 +556,20 @@ class SLRQ_Quiz {
 				if (!slot || !p) return;
 				var altText = 'Sego Lily ' + p.name + (p.scent ? ', ' + p.scent + ' scent' : '') + ', small-batch tallow skincare from Montana';
 				var imgHtml = p.image_url
-					? '<img src="' + p.image_url + '" alt="' + altText + '" loading="lazy" width="200" height="200" />'
+					? '<img src="' + p.image_url + '" alt="' + altText + '" loading="lazy" width="200" height="200" data-lprq-zoom="1" data-lprq-zoom-src="' + p.image_url + '" data-lprq-zoom-alt="' + altText + '" />'
 					: p.name;
 				var badgeHtml = p.badge ? '<span class="lprq__product-badge">' + p.badge + '</span>' : '';
 				var cartUrl = p.add_to_cart_url || p.shop_url;
+				var pdpUrl = p.shop_url || '';
+				var nameHtml = pdpUrl
+					? '<a class="lprq__product-name-link lprq__cta-track" data-cta-id="primary_name" data-product="' + (p.slug || '') + '" href="' + pdpUrl + '" target="_blank" rel="noopener">' + p.name + '</a>'
+					: p.name;
 				slot.innerHTML =
 					'<div class="lprq__primary-product">' +
 						'<div class="lprq__product-image">' + imgHtml + '</div>' +
 						'<div class="lprq__product-body">' +
 							'<div class="lprq__product-label">Start here</div>' +
-							'<div class="lprq__product-name">' + p.name + ' ' + badgeHtml + '</div>' +
+							'<div class="lprq__product-name">' + nameHtml + ' ' + badgeHtml + '</div>' +
 							'<div class="lprq__product-scent">' + p.scent + '</div>' +
 							'<div class="lprq__product-blurb">' + p.blurb + '</div>' +
 							'<a class="lprq__product-link lprq__cta-track" data-cta-id="primary" data-product="' + (p.slug || '') + '" href="' + cartUrl + '" rel="nofollow">Build my routine\u00a0&rarr;</a>' +
@@ -534,18 +585,76 @@ class SLRQ_Quiz {
 					addBothHtml = '<a class="lprq__add-both lprq__cta-track" data-cta-id="add_both" href="' + window.lprqAddBothUrl + '" rel="nofollow">Add both to my routine\u00a0&rarr;</a>';
 				}
 				var badgeHtml = p.badge ? '<span class="lprq__product-badge lprq__product-badge--small">' + p.badge + '</span>' : '';
+				var pdpUrl = p.shop_url || '';
+				var nameHtml = pdpUrl
+					? '<a class="lprq__product-name-link lprq__cta-track" data-cta-id="secondary_name" data-product="' + (p.slug || '') + '" href="' + pdpUrl + '" target="_blank" rel="noopener">' + p.name + '</a>'
+					: p.name;
+				var thumbHtml = '';
+				if (p.image_url) {
+					thumbHtml = '<img class="lprq__pairs-thumb" src="' + p.image_url + '" alt="' + p.name + '" loading="lazy" width="56" height="56" data-lprq-zoom="1" data-lprq-zoom-src="' + p.image_url + '" data-lprq-zoom-alt="' + p.name + '" />';
+				}
 				var pairsContent =
 					'<span class="lprq__pairs-note-label">Pairs well with</span>' +
 					'<div class="lprq__pairs-row">' +
-						(p.image_url ? '<img class="lprq__pairs-thumb" src="' + p.image_url + '" alt="' + p.name + '" loading="lazy" width="56" height="56" />' : '') +
+						thumbHtml +
 						'<div class="lprq__pairs-info">' +
-							'<div class="lprq__pairs-name">' + p.name + ' ' + badgeHtml + '</div>' +
+							'<div class="lprq__pairs-name">' + nameHtml + ' ' + badgeHtml + '</div>' +
 							'<div class="lprq__pairs-scent">' + p.scent + '</div>' +
 							'<div class="lprq__pairs-blurb">' + (p.blurb || '') + '</div>' +
 						'</div>' +
 					'</div>' +
 					addBothHtml;
 				slot.innerHTML = pairsContent;
+			}
+
+			// Lightbox: clicking a product image opens a fullscreen preview.
+			// Click anywhere on the dark backdrop (or the X) to close. The image
+			// itself doesn't propagate the click, so users can pan-touch on
+			// mobile without accidentally closing.
+			(function() {
+				var lb       = document.getElementById('lprq-lightbox');
+				var lbImg    = document.getElementById('lprq-lightbox-img');
+				var lbClose  = document.getElementById('lprq-lightbox-close');
+				if (!lb || !lbImg) return;
+				function open(src, alt) {
+					lbImg.src = src;
+					lbImg.alt = alt || '';
+					lb.classList.add('is-open');
+					document.body.style.overflow = 'hidden';
+				}
+				function close() {
+					lb.classList.remove('is-open');
+					lbImg.src = '';
+					document.body.style.overflow = '';
+				}
+				document.addEventListener('click', function(e) {
+					var trigger = e.target.closest && e.target.closest('[data-lprq-zoom]');
+					if (!trigger) return;
+					e.preventDefault();
+					open(trigger.getAttribute('data-lprq-zoom-src') || trigger.src, trigger.getAttribute('data-lprq-zoom-alt') || trigger.alt);
+				});
+				lb.addEventListener('click', function(e) {
+					if (e.target === lbImg) return;
+					close();
+				});
+				if (lbClose) lbClose.addEventListener('click', close);
+				document.addEventListener('keydown', function(e) {
+					if (e.key === 'Escape' && lb.classList.contains('is-open')) close();
+				});
+			})();
+
+			// Save-as-PDF: triggers the browser's print dialog. Print CSS hides
+			// the chrome (CTAs, callouts, share link, lightbox) and reflows the
+			// results content for paper. Users pick "Save as PDF" in the dialog
+			// to get a file; on mobile, the share sheet offers the same.
+			var savePdfBtn = document.getElementById('lprq-save-pdf');
+			if (savePdfBtn) {
+				savePdfBtn.addEventListener('click', function() {
+					if (typeof gtag === 'function') {
+						gtag('event', 'quiz_save_pdf', { skin_concern: quizData.skin_concern || '' });
+					}
+					window.print();
+				});
 			}
 
 			// Per-CTA tracking on results-page actions. Fires a gtag event
@@ -608,7 +717,7 @@ class SLRQ_Quiz {
 			'frustration'   => $frustration,
 		) );
 
-		// Quiz still succeeds for the user even if Mautic sync fails — they get
+		// Quiz still succeeds for the user even if Mautic sync fails. They get
 		// their recommendation. We log the failure for the admin to address.
 		if ( ! $mautic_result['success'] ) {
 			error_log( '[LPRQ] Mautic sync failed for ' . $email . ': ' . $mautic_result['message'] );

@@ -88,7 +88,57 @@ class SLRQ_Recommendations {
 			$default['testimonial'] = $testimonial;
 		}
 
+		$default['diagnostic'] = self::diagnostic_for( $skin_concern, $frustration );
+
 		return apply_filters( 'lprq_recommendation', $default, $skin_concern, $frustration );
+	}
+
+	/**
+	 * One-sentence diagnostic shown directly under the "Your match" heading.
+	 * Maps each (skin_concern, frustration) combo to a derm-chart-style read
+	 * of the customer's situation. The point is to make the results feel
+	 * personally read, not generic, before the product copy lands.
+	 */
+	private static function diagnostic_for( $skin_concern, $frustration ) {
+		$normalize = function ( $s ) {
+			return str_replace( array( "\xE2\x80\x99", '&rsquo;' ), "'", $s );
+		};
+		$f = $normalize( $frustration );
+		$map = array(
+			'Wrinkles & dark spots' => array(
+				'Nothing works long enough'   => 'Maturing skin that needs sustained barrier support, not stop-start actives.',
+				'Too many products'           => 'Maturing skin that&rsquo;s been over-treated with competing actives chasing the same biology.',
+				"Don't trust ingredients"     => 'Maturing skin plus a clean-label gut check. You want ingredients you can pronounce.',
+				'Just want something simple'  => 'Maturing skin on a minimalist routine. Two jars, two specific jobs.',
+			),
+			'Dryness & tightness' => array(
+				'Nothing works long enough'   => 'Barrier-depleted skin that loses moisture faster than your products can replace it.',
+				'Too many products'           => 'Dehydrated barrier that&rsquo;s been chased with water-based fixes instead of the lipids it actually needs.',
+				"Don't trust ingredients"     => 'Dry skin plus ingredient caution. You read every label and most of them make you nervous.',
+				'Just want something simple'  => 'Dry skin, minimalist preference. The fix is the right fats, not more steps.',
+			),
+			'Redness & sensitivity' => array(
+				'Nothing works long enough'   => 'Reactive skin where most products start a flare within a week.',
+				'Too many products'           => 'Reactive skin compounded by ingredient overload.',
+				"Don't trust ingredients"     => 'Reactive skin plus ingredient caution. The label is often the trigger before the product is.',
+				'Just want something simple'  => 'Reactive skin, minimalist by necessity. Fewer ingredients, fewer flares.',
+			),
+			'Breakouts' => array(
+				'Nothing works long enough'   => 'Barrier-stressed skin where stripping treatments are driving the breakout cycle.',
+				'Too many products'           => 'Inflamed barrier from a five-step war against your own oil production.',
+				"Don't trust ingredients"     => 'Breakout-prone plus ingredient caution. The chemistry-lab labels are part of the cycle.',
+				'Just want something simple'  => 'Breakout-prone, minimalist preference. Calm the barrier, drop the actives.',
+			),
+		);
+		if ( ! isset( $map[ $skin_concern ] ) ) {
+			return '';
+		}
+		foreach ( $map[ $skin_concern ] as $key => $value ) {
+			if ( $normalize( $key ) === $f ) {
+				return $value;
+			}
+		}
+		return reset( $map[ $skin_concern ] );
 	}
 
 	private static function default_pair( $skin_concern, $frustration, $product_count = '', $firstname = '' ) {
