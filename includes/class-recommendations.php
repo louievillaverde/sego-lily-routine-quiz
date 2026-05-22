@@ -76,10 +76,14 @@ class SLRQ_Recommendations {
 					break;
 				}
 			}
-			if ( ! $replaced ) {
-				// Fallback: append the pitch if no generic line matched (defensive).
-				$default['why'] .= ' ' . $moxie_pitch;
-			}
+			// No append fallback. If no short standalone pattern matched, the
+			// str_replace above already integrated "Moxie Intensive Moisture"
+			// inline within the existing sentence (e.g. "...and Moxie at night
+			// reinforces them..."). Appending the standalone pitch on top of
+			// that creates a duplicate-Moxie-paragraph bug. The product card's
+			// Men's pick badge + "For him" blurb carry the for-him positioning
+			// when the why text doesn't repeat it.
+			unset( $replaced );
 		}
 
 		// Build add_both_url with primary + secondary slugs + scents
