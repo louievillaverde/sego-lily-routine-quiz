@@ -115,7 +115,7 @@ class SLRQ_Quiz {
 		.lprq__results { text-align: center; }
 
 		.lprq__results-heading { font-size: 32px; font-weight: 600; margin: 0 0 2px !important; color: #2C2C2C; line-height: 1.3; font-family: Georgia, 'Times New Roman', serif; }
-		.lprq__credibility { text-align: center; font-size: 11px; color: #8A9499; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin: -10px 0 22px; padding: 10px 16px; border-top: 1px solid #E8E2D6; border-bottom: 1px solid #E8E2D6; }
+		.lprq__credibility { text-align: center; font-size: 11px; color: #8A9499; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin: -10px 0 22px; padding: 10px 16px; border-top: 1px solid #E8E2D6; border-bottom: 1px solid #E8E2D6; text-wrap: pretty; }
 		.lprq__testimonial { margin: 28px 0 24px; }
 		.lprq__testimonial blockquote { background: #FAFAF7; border-left: 3px solid #B8A98C; padding: 18px 22px; margin: 0; font-style: italic; color: #4a5d68; font-size: 15px; line-height: 1.6; border-radius: 0 8px 8px 0; }
 		.lprq__testimonial cite { display: block; margin-top: 10px; font-size: 12px; color: #8A9499; font-style: normal; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
@@ -159,6 +159,10 @@ class SLRQ_Quiz {
 		.lprq__callout strong { font-weight: 700; }
 		.lprq__reassurance { font-size: 14px; color: #628393; margin: 16px 0 0; text-align: center; line-height: 1.5; }
 		.lprq__signoff { font-size: 15px; color: #628393; font-style: italic; margin-top: 28px; }
+		.lprq__legal { font-size: 11px; color: #B8A98C; text-align: center; margin: 24px 0 0; letter-spacing: 0.4px; }
+		.lprq__legal a { color: inherit; text-decoration: none; border-bottom: 1px dotted #D4CFC4; padding-bottom: 1px; }
+		.lprq__legal a:hover { color: #386174; border-bottom-color: #386174; }
+		.lprq__legal-sep { margin: 0 8px; color: #D4CFC4; }
 
 		.lprq__diagnostic { font-size: 14.5px; color: #628393; font-style: italic; line-height: 1.45; margin: 0 auto 44px !important; padding: 0 !important; text-align: center; max-width: 480px; text-wrap: balance; }
 		.lprq__diagnostic:empty { display: none; }
@@ -194,7 +198,7 @@ class SLRQ_Quiz {
 
 				<div class="lprq__brand">SEGO LILY SKINCARE</div>
 				<?php
-				$cred = apply_filters( 'lprq_results_credibility', 'Built by Holly in Montana. Five food-grade ingredients. Made by hand.' );
+				$cred = apply_filters( 'lprq_results_credibility', 'Built by Holly in Montana. Five food-grade ingredients. Made by&nbsp;hand.' );
 				if ( ! empty( $cred ) ) {
 					echo '<div class="lprq__credibility">' . wp_kses_post( $cred ) . '</div>';
 				}
@@ -281,6 +285,23 @@ class SLRQ_Quiz {
 							?>
 							<p class="lprq__reassurance" id="lprq-reassurance"></p>
 							<p class="lprq__signoff"><?php echo esc_html( apply_filters( 'lprq_signoff', '' ) ); ?></p>
+							<?php
+							$privacy_url = apply_filters( 'lprq_privacy_url', home_url( '/privacy-policy/' ) );
+							$terms_url   = apply_filters( 'lprq_terms_url', home_url( '/terms-and-conditions/' ) );
+							if ( ! empty( $privacy_url ) || ! empty( $terms_url ) ) {
+								echo '<p class="lprq__legal">';
+								if ( ! empty( $privacy_url ) ) {
+									echo '<a href="' . esc_url( $privacy_url ) . '" target="_blank" rel="noopener">Privacy Policy</a>';
+								}
+								if ( ! empty( $privacy_url ) && ! empty( $terms_url ) ) {
+									echo '<span class="lprq__legal-sep">&middot;</span>';
+								}
+								if ( ! empty( $terms_url ) ) {
+									echo '<a href="' . esc_url( $terms_url ) . '" target="_blank" rel="noopener">Terms &amp; Conditions</a>';
+								}
+								echo '</p>';
+							}
+							?>
 						</div>
 					</div>
 				</form>
