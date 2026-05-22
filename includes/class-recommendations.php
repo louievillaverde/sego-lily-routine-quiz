@@ -203,14 +203,19 @@ class SLRQ_Recommendations {
 	}
 
 	/**
-	 * WC native add-to-cart URL with redirect to cart.
-	 * Example: https://site.com/cart/?add-to-cart=123
+	 * WC native add-to-cart URL.
+	 * WC's WC_Form_Handler::add_to_cart_action hooks on wp_loaded and
+	 * processes the `add-to-cart` query var on ANY page. Putting the param
+	 * on /cart/ directly is unreliable (cart page can render before the
+	 * cart-add logic completes). Putting it on home_url('/') is the canonical
+	 * WC pattern — WC adds the item, then redirects per the
+	 * "Redirect to cart after add" WC setting.
 	 */
 	private static function add_to_cart_url( $product_id ) {
 		if ( ! $product_id ) {
 			return home_url( '/cart/' );
 		}
-		return add_query_arg( 'add-to-cart', $product_id, wc_get_cart_url() );
+		return add_query_arg( 'add-to-cart', $product_id, home_url( '/' ) );
 	}
 
 	/**

@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.11.1
+ * Version:           1.11.2
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.11.1' );
+define( 'SLRQ_VERSION', '1.11.2' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -108,7 +108,7 @@ add_filter( 'lprq_product_image', function( $url, $product, $scent ) {
  * Intercepts /?slrq_action=add_routine&p=PRIMARY_ID&s=SECONDARY_ID
  * Adds both products to the WooCommerce cart, then redirects to /cart/.
  */
-add_action( 'init', function() {
+add_action( 'wp_loaded', function() {
 	if ( ! isset( $_GET['slrq_action'] ) || $_GET['slrq_action'] !== 'add_routine' ) {
 		return;
 	}
@@ -117,11 +117,20 @@ add_action( 'init', function() {
 	}
 	$primary   = isset( $_GET['p'] ) ? (int) $_GET['p'] : 0;
 	$secondary = isset( $_GET['s'] ) ? (int) $_GET['s'] : 0;
-	if ( $primary ) {
-		WC()->cart->add_to_cart( $primary );
+	$added     = false;
+	if ( $primary > 0 ) {
+		$added = WC()->cart->add_to_cart( $primary ) || $added;
 	}
-	if ( $secondary && $secondary !== $primary ) {
-		WC()->cart->add_to_cart( $secondary );
+	if ( $secondary > 0 && $secondary !== $primary ) {
+		$added = WC()->cart->add_to_cart( $secondary ) || $added;
+	}
+	// Persist cart state explicitly so the cart page sees the additions
+	// on the next request.
+	if ( $added ) {
+		WC()->cart->calculate_totals();
+		if ( method_exists( WC()->cart, 'set_session' ) ) {
+			WC()->cart->set_session();
+		}
 	}
 	wp_safe_redirect( wc_get_cart_url() );
 	exit;
