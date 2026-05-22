@@ -113,15 +113,17 @@ class SLRQ_Quiz {
 		.lprq__error { color: #b8302e; font-size: 14px; margin-top: 10px; min-height: 20px; font-family: Georgia, 'Times New Roman', serif; }
 		.lprq__loading { text-align: center; padding: 80px 20px; color: #8A9499; font-size: 16px; font-style: italic; }
 		.lprq__results { text-align: center; }
-		.lprq__results-greeting { font-size: 14px; color: #8A9499; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 12px; }
-		.lprq__results-heading { font-size: 32px; font-weight: 600; margin: 0 0 16px; color: #2C2C2C; line-height: 1.3; }
+
+		.lprq__results-heading { font-size: 32px; font-weight: 600; margin: 0 0 20px; color: #2C2C2C; line-height: 1.3; font-family: Georgia, 'Times New Roman', serif; }
 		.lprq__credibility { text-align: center; font-size: 12px; color: #8A9499; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin: 0 0 20px; padding: 12px 16px; border-top: 1px solid #E8E2D6; border-bottom: 1px solid #E8E2D6; }
-		.lprq__testimonial { margin: 24px 0; }
+		.lprq__testimonial { margin: 28px 0 24px; }
 		.lprq__testimonial blockquote { background: #FAFAF7; border-left: 3px solid #B8A98C; padding: 18px 22px; margin: 0; font-style: italic; color: #4a5d68; font-size: 15px; line-height: 1.6; border-radius: 0 8px 8px 0; }
-		.lprq__testimonial cite { display: block; margin-top: 10px; font-size: 13px; color: #8A9499; font-style: normal; font-weight: 600; letter-spacing: 0.5px; }
+		.lprq__testimonial cite { display: block; margin-top: 10px; font-size: 12px; color: #8A9499; font-style: normal; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
 		.lprq__results-why { font-size: 15.5px; color: #4a5d68; line-height: 1.7; margin: 0 0 32px !important; padding: 22px 26px; background: #F7F6F3; border-radius: 12px; text-align: left; border-left: 4px solid #386174; display: block; }
 		.lprq__results-why p { margin: 0 0 14px; }
 		.lprq__results-why p:last-child { margin-bottom: 0; }
+		.lprq__results-why p.lprq__why-aside { font-size: 13px; color: #8A9499; font-style: italic; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #D4CFC4; }
+		.lprq__results-why p.lprq__why-aside em { font-style: italic; }
 		.lprq__results-why strong { color: #2C2C2C; }
 		.lprq__primary-product { background: #ffffff; border: 2px solid #386174; border-radius: 14px; padding: 32px; margin: 0 0 36px !important; margin-top: 0 !important; text-align: left; display: flex; gap: 28px; align-items: center; box-shadow: 0 6px 20px rgba(56, 97, 116, 0.10); }
 		#lprq-result-primary { display: block; margin-top: 0 !important; padding-top: 0 !important; }
@@ -240,8 +242,7 @@ class SLRQ_Quiz {
 
 					<div class="lprq__step" data-step="results">
 						<div class="lprq__results">
-							<p class="lprq__results-greeting" id="lprq-result-greeting"></p>
-							<h2 class="lprq__results-heading">Your match</h2>
+							<h2 class="lprq__results-heading" id="lprq-result-greeting">Your match</h2>
 							<?php
 							$cred = apply_filters( 'lprq_results_credibility', 'Built by Holly in Montana. Five food-grade ingredients. Made by hand.' );
 							if ( ! empty( $cred ) ) {
@@ -249,8 +250,8 @@ class SLRQ_Quiz {
 							}
 							?>
 							<p class="lprq__results-why" id="lprq-result-why"></p>
-							<div class="lprq__testimonial" id="lprq-result-testimonial"></div>
 							<div id="lprq-result-primary"></div>
+							<div class="lprq__testimonial" id="lprq-result-testimonial"></div>
 							<div class="lprq__pairs-note" id="lprq-result-pairs"></div>
 							<div class="lprq__shop-all"><a href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">Or shop the full line &rarr;</a></div>
 							<?php
@@ -475,19 +476,19 @@ class SLRQ_Quiz {
 			function renderResults(payload) {
 				clearProgress();
 				window.lprqAddBothUrl = payload.add_both_url || '';
-				document.getElementById('lprq-result-greeting').textContent = 'For ' + (quizData.firstname || 'you');
+				document.getElementById('lprq-result-greeting').textContent = quizData.firstname ? 'Your match, ' + quizData.firstname : 'Your match';
 				var reass = document.getElementById('lprq-reassurance');
 				if (reass) {
 					reass.textContent = 'Saved your match. I’ll check in via email.';
 				}
 				var whyText = payload.why || '';
-				// Split into pain vs product paragraphs at the first product mention
-				var split = whyText.split(/(\. <strong>)/);
-				if (split.length >= 3) {
-					whyText = '<p>' + split[0] + '.</p><p><strong>' + split.slice(2).join('') ;
-				} else {
-					whyText = '<p>' + whyText + '</p>';
-				}
+				// Split into multiple paragraphs at every '<strong>' transition for
+				// scannable mobile reading. Also break out the (Moxie addendum) as
+				// its own italic line.
+				whyText = whyText.replace(/\. <strong>/g, '.</p><p><strong>');
+				whyText = whyText.replace(/ <em>\(Holly built/g, '</p><p class="lprq__why-aside"><em>(Holly built');
+				whyText = whyText.replace(/line\.\)<\/em>/g, 'line.)</em>');
+				whyText = '<p>' + whyText + '</p>';
 				document.getElementById('lprq-result-why').innerHTML = whyText;
 				var testimonialEl = document.getElementById('lprq-result-testimonial');
 				if (testimonialEl && payload.testimonial) {
