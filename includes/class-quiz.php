@@ -114,8 +114,8 @@ class SLRQ_Quiz {
 		.lprq__loading { text-align: center; padding: 80px 20px; color: #8A9499; font-size: 16px; font-style: italic; }
 		.lprq__results { text-align: center; }
 
-		.lprq__results-heading { font-size: 32px; font-weight: 600; margin: 0 0 20px; color: #2C2C2C; line-height: 1.3; font-family: Georgia, 'Times New Roman', serif; }
-		.lprq__credibility { text-align: center; font-size: 12px; color: #8A9499; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin: 0 0 20px; padding: 12px 16px; border-top: 1px solid #E8E2D6; border-bottom: 1px solid #E8E2D6; }
+		.lprq__results-heading { font-size: 32px; font-weight: 600; margin: 0 0 6px; color: #2C2C2C; line-height: 1.3; font-family: Georgia, 'Times New Roman', serif; }
+		.lprq__credibility { text-align: center; font-size: 11px; color: #8A9499; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin: -10px 0 22px; padding: 10px 16px; border-top: 1px solid #E8E2D6; border-bottom: 1px solid #E8E2D6; }
 		.lprq__testimonial { margin: 28px 0 24px; }
 		.lprq__testimonial blockquote { background: #FAFAF7; border-left: 3px solid #B8A98C; padding: 18px 22px; margin: 0; font-style: italic; color: #4a5d68; font-size: 15px; line-height: 1.6; border-radius: 0 8px 8px 0; }
 		.lprq__testimonial cite { display: block; margin-top: 10px; font-size: 12px; color: #8A9499; font-style: normal; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
@@ -160,7 +160,7 @@ class SLRQ_Quiz {
 		.lprq__reassurance { font-size: 14px; color: #628393; margin: 16px 0 0; text-align: center; line-height: 1.5; }
 		.lprq__signoff { font-size: 15px; color: #628393; font-style: italic; margin-top: 28px; }
 
-		.lprq__diagnostic { font-size: 15px; color: #4a5d68; font-style: italic; line-height: 1.55; margin: -8px 0 22px; text-align: center; max-width: 520px; margin-left: auto; margin-right: auto; text-wrap: balance; }
+		.lprq__diagnostic { font-size: 14.5px; color: #628393; font-style: italic; line-height: 1.5; margin: 0 auto 24px; text-align: center; max-width: 480px; text-wrap: balance; }
 		.lprq__diagnostic:empty { display: none; }
 
 		.lprq__product-name-link { color: inherit; text-decoration: none; border-bottom: 1px dotted transparent; transition: border-color 0.15s ease; }
@@ -176,10 +176,6 @@ class SLRQ_Quiz {
 		.lprq__lightbox-close { position: absolute; top: 18px; right: 24px; background: transparent; border: none; color: #ffffff; font-size: 40px; line-height: 1; cursor: pointer; padding: 4px 12px; font-family: Georgia, 'Times New Roman', serif; }
 		.lprq__lightbox-close:hover { color: #E8DEC4; }
 
-		.lprq__save-pdf-row { text-align: center; margin: 28px 0 0; }
-		.lprq__save-pdf { background: transparent; border: 1px solid #B8A98C; color: #4a5d68; padding: 10px 22px; font-size: 13px; font-family: Georgia, 'Times New Roman', serif; letter-spacing: 0.6px; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; }
-		.lprq__save-pdf:hover { background: #386174; color: #ffffff; border-color: #386174; }
-
 		@media (max-width: 540px) {
 			.lprq { padding: 28px 20px; }
 			.lprq__step h2 { font-size: 22px; margin: 0 0 24px; }
@@ -191,25 +187,18 @@ class SLRQ_Quiz {
 			.lprq__diagnostic { font-size: 14px; padding: 0 4px; }
 		}
 
-		@media print {
-			body * { visibility: hidden; }
-			.lprq, .lprq * { visibility: visible; }
-			.lprq { padding: 0; }
-			.lprq__step[data-step="results"] { display: block !important; }
-			.lprq__no-print, .lprq__shop-all, .lprq__callout { display: none !important; }
-			.lprq__product-link, .lprq__add-both { display: none !important; }
-			.lprq__primary-product { box-shadow: none; border: 1px solid #B8A98C; page-break-inside: avoid; }
-			.lprq__pairs-note { background: #ffffff; border: 1px solid #E8E2D6; page-break-inside: avoid; }
-			.lprq__results-why { background: #ffffff; border-left: 3px solid #386174; page-break-inside: avoid; }
-			.lprq__testimonial { page-break-inside: avoid; }
-			.lprq__lightbox { display: none !important; }
-		}
 		</style>
 
 		<div class="lprq-wrap">
 			<div class="lprq" id="lprq">
 
 				<div class="lprq__brand">SEGO LILY SKINCARE</div>
+				<?php
+				$cred = apply_filters( 'lprq_results_credibility', 'Built by Holly in Montana. Five food-grade ingredients. Made by hand.' );
+				if ( ! empty( $cred ) ) {
+					echo '<div class="lprq__credibility">' . wp_kses_post( $cred ) . '</div>';
+				}
+				?>
 
 				<ol class="lprq__steps" id="lprq-steps">
 					<li><button type="button" class="lprq__step-dot lprq__step-dot--current" data-goto="1" aria-label="Step 1">1</button></li>
@@ -279,12 +268,6 @@ class SLRQ_Quiz {
 						<div class="lprq__results">
 							<h2 class="lprq__results-heading" id="lprq-result-greeting">Your match</h2>
 							<p class="lprq__diagnostic" id="lprq-result-diagnostic"></p>
-							<?php
-							$cred = apply_filters( 'lprq_results_credibility', 'Built by Holly in Montana. Five food-grade ingredients. Made by hand.' );
-							if ( ! empty( $cred ) ) {
-								echo '<div class="lprq__credibility">' . wp_kses_post( $cred ) . '</div>';
-							}
-							?>
 							<p class="lprq__results-why" id="lprq-result-why"></p>
 							<div id="lprq-result-primary"></div>
 							<div class="lprq__testimonial" id="lprq-result-testimonial"></div>
@@ -298,9 +281,6 @@ class SLRQ_Quiz {
 							?>
 							<p class="lprq__reassurance" id="lprq-reassurance"></p>
 							<p class="lprq__signoff"><?php echo esc_html( apply_filters( 'lprq_signoff', '' ) ); ?></p>
-							<div class="lprq__save-pdf-row lprq__no-print">
-								<button type="button" class="lprq__save-pdf" id="lprq-save-pdf">Save my routine as PDF</button>
-							</div>
 						</div>
 					</div>
 				</form>
@@ -643,19 +623,6 @@ class SLRQ_Quiz {
 				});
 			})();
 
-			// Save-as-PDF: triggers the browser's print dialog. Print CSS hides
-			// the chrome (CTAs, callouts, share link, lightbox) and reflows the
-			// results content for paper. Users pick "Save as PDF" in the dialog
-			// to get a file; on mobile, the share sheet offers the same.
-			var savePdfBtn = document.getElementById('lprq-save-pdf');
-			if (savePdfBtn) {
-				savePdfBtn.addEventListener('click', function() {
-					if (typeof gtag === 'function') {
-						gtag('event', 'quiz_save_pdf', { skin_concern: quizData.skin_concern || '' });
-					}
-					window.print();
-				});
-			}
 
 			// Per-CTA tracking on results-page actions. Fires a gtag event
 			// before the link navigates (works because gtag is async but the
