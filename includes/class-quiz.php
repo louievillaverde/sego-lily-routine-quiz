@@ -128,6 +128,10 @@ class SLRQ_Quiz {
 		.lprq__primary-product .lprq__product-blurb { font-size: 15px; color: #4a5d68; line-height: 1.6; margin: 0 0 28px; }
 		.lprq__primary-product .lprq__product-link { display: inline-block; padding: 13px 22px; font-size: 15px; font-weight: 600; background: #386174; color: #ffffff !important; text-decoration: none; border-radius: 8px; transition: all 0.15s ease; letter-spacing: 0.3px; }
 		.lprq__primary-product .lprq__product-link:hover { background: #2a4a5a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56, 97, 116, 0.25); }
+		.lprq__add-both { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 24px; background: #2C2C2C; color: #ffffff !important; border-radius: 12px; margin: 0 0 24px; text-decoration: none; transition: all 0.15s ease; box-shadow: 0 4px 16px rgba(44, 44, 44, 0.15); }
+		.lprq__add-both:hover { background: #1a1a1a; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(44, 44, 44, 0.25); }
+		.lprq__add-both-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #B8A98C; font-weight: 700; }
+		.lprq__add-both-cta { font-size: 17px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; }
 		.lprq__pairs-note { font-size: 15px; color: #4a5d68; text-align: center; margin: 0 0 32px; padding: 18px 22px; background: #FAFAF7; border-radius: 10px; line-height: 1.5; font-family: Georgia, 'Times New Roman', serif; border: 1px solid #E8E2D6; }
 		.lprq__pairs-note-label { display: block; font-size: 11px; color: #8A9499; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 10px; font-weight: 600; }
 		.lprq__pairs-link { display: inline-flex; align-items: center; gap: 14px; color: #386174 !important; font-weight: 600; text-decoration: none; padding: 10px 14px; border-radius: 8px; transition: background 0.15s ease; max-width: 100%; }
@@ -228,6 +232,7 @@ class SLRQ_Quiz {
 							<h2 class="lprq__results-heading">Your match</h2>
 							<p class="lprq__results-why" id="lprq-result-why"></p>
 							<div id="lprq-result-primary"></div>
+							<div id="lprq-result-add-both"></div>
 							<div class="lprq__pairs-note" id="lprq-result-pairs"></div>
 							<?php
 							$callout = apply_filters( 'lprq_results_callout', '' );
@@ -452,11 +457,12 @@ class SLRQ_Quiz {
 				clearProgress();
 				document.getElementById('lprq-result-greeting').textContent = 'For ' + (quizData.firstname || 'you');
 				var reass = document.getElementById('lprq-reassurance');
-				if (reass && quizData.email) {
-					reass.textContent = 'We saved your match. Your routine is on its way to ' + quizData.email + '.';
+				if (reass) {
+					reass.textContent = 'We saved your match. Holly will check in via email.';
 				}
 				document.getElementById('lprq-result-why').innerHTML = payload.why || '';
 				renderPrimary(payload.primary);
+				renderAddBoth(payload);
 				renderSecondary(payload.secondary);
 				showStep('results');
 				if (typeof gtag === 'function') {
@@ -480,9 +486,19 @@ class SLRQ_Quiz {
 							'<div class="lprq__product-name">' + p.name + '</div>' +
 							'<div class="lprq__product-scent">' + p.scent + '</div>' +
 							'<div class="lprq__product-blurb">' + p.blurb + '</div>' +
-							'<a class="lprq__product-link" href="' + p.shop_url + '" rel="nofollow">Add to my routine\u00a0&rarr;</a>' +
+							'<a class="lprq__product-link" href="' + (p.add_to_cart_url || p.shop_url) + '" rel="nofollow">Add to my routine\u00a0&rarr;</a>' +
 						'</div>' +
 					'</div>';
+			}
+
+			function renderAddBoth(payload) {
+				var slot = document.getElementById('lprq-result-add-both');
+				if (!slot || !payload.add_both_url) return;
+				slot.innerHTML =
+					'<a class="lprq__add-both" href="' + payload.add_both_url + '" rel="nofollow">' +
+						'<span class="lprq__add-both-label">Complete the routine</span>' +
+						'<span class="lprq__add-both-cta">Add both to my cart\u00a0&rarr;</span>' +
+					'</a>';
 			}
 
 			function renderSecondary(p) {
@@ -490,7 +506,7 @@ class SLRQ_Quiz {
 				if (!slot || !p) return;
 				slot.innerHTML =
 					'<span class="lprq__pairs-note-label">Pairs well with</span>' +
-					'<a href="' + p.shop_url + '" rel="nofollow" class="lprq__pairs-link">' + (p.image_url ? '<img class="lprq__pairs-thumb" src="' + p.image_url + '" alt="' + p.name + '" loading="lazy" width="48" height="48" />' : '') + '<span class="lprq__pairs-text"><strong>' + p.name + '</strong><span class="lprq__pairs-cta">Add to routine\u00a0&rarr;</span></span></a>';
+					'<a href="' + (p.add_to_cart_url || p.shop_url) + '" rel="nofollow" class="lprq__pairs-link">' + (p.image_url ? '<img class="lprq__pairs-thumb" src="' + p.image_url + '" alt="' + p.name + '" loading="lazy" width="48" height="48" />' : '') + '<span class="lprq__pairs-text"><strong>' + p.name + '</strong><span class="lprq__pairs-cta">Add to routine\u00a0&rarr;</span></span></a>';
 			}
 
 			// Resume quiz from a recent saved state (within 24h)
