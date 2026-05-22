@@ -51,6 +51,15 @@ class SLRQ_Recommendations {
 			$default['secondary']['slug'] ?? '',
 			$default['secondary']['scent'] ?? ''
 		);
+
+		// Per-skin-concern testimonial (filter-driven, defaults to none).
+		// Holly can populate via functions.php:
+		//   add_filter('lprq_testimonial_for_concern', function($t, $concern) { ... });
+		$testimonial = apply_filters( 'lprq_testimonial_for_concern', null, $skin_concern );
+		if ( ! empty( $testimonial ) && is_array( $testimonial ) && ! empty( $testimonial['quote'] ) ) {
+			$default['testimonial'] = $testimonial;
+		}
+
 		return apply_filters( 'lprq_recommendation', $default, $skin_concern, $frustration );
 	}
 

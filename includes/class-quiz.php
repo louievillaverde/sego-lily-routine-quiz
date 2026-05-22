@@ -115,6 +115,10 @@ class SLRQ_Quiz {
 		.lprq__results { text-align: center; }
 		.lprq__results-greeting { font-size: 14px; color: #8A9499; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 12px; }
 		.lprq__results-heading { font-size: 32px; font-weight: 600; margin: 0 0 16px; color: #2C2C2C; line-height: 1.3; }
+		.lprq__credibility { text-align: center; font-size: 12px; color: #8A9499; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin: 0 0 20px; padding: 12px 16px; border-top: 1px solid #E8E2D6; border-bottom: 1px solid #E8E2D6; }
+		.lprq__testimonial { margin: 24px 0; }
+		.lprq__testimonial blockquote { background: #FAFAF7; border-left: 3px solid #B8A98C; padding: 18px 22px; margin: 0; font-style: italic; color: #4a5d68; font-size: 15px; line-height: 1.6; border-radius: 0 8px 8px 0; }
+		.lprq__testimonial cite { display: block; margin-top: 10px; font-size: 13px; color: #8A9499; font-style: normal; font-weight: 600; letter-spacing: 0.5px; }
 		.lprq__results-why { font-size: 15.5px; color: #4a5d68; line-height: 1.7; margin: 0 0 32px !important; padding: 22px 26px; background: #F7F6F3; border-radius: 12px; text-align: left; border-left: 4px solid #386174; display: block; }
 		.lprq__results-why p { margin: 0 0 14px; }
 		.lprq__results-why p:last-child { margin-bottom: 0; }
@@ -238,7 +242,14 @@ class SLRQ_Quiz {
 						<div class="lprq__results">
 							<p class="lprq__results-greeting" id="lprq-result-greeting"></p>
 							<h2 class="lprq__results-heading">Your match</h2>
+							<?php
+							$cred = apply_filters( 'lprq_results_credibility', 'Built by Holly in Montana. Five food-grade ingredients. Made by hand.' );
+							if ( ! empty( $cred ) ) {
+								echo '<div class="lprq__credibility">' . wp_kses_post( $cred ) . '</div>';
+							}
+							?>
 							<p class="lprq__results-why" id="lprq-result-why"></p>
+							<div class="lprq__testimonial" id="lprq-result-testimonial"></div>
 							<div id="lprq-result-primary"></div>
 							<div class="lprq__pairs-note" id="lprq-result-pairs"></div>
 							<div class="lprq__shop-all"><a href="<?php echo esc_url( home_url( '/shop/' ) ); ?>">Or shop the full line &rarr;</a></div>
@@ -478,6 +489,12 @@ class SLRQ_Quiz {
 					whyText = '<p>' + whyText + '</p>';
 				}
 				document.getElementById('lprq-result-why').innerHTML = whyText;
+				var testimonialEl = document.getElementById('lprq-result-testimonial');
+				if (testimonialEl && payload.testimonial) {
+					testimonialEl.innerHTML = '<blockquote>&ldquo;' + payload.testimonial.quote + '&rdquo;<cite>&mdash; ' + (payload.testimonial.attribution || 'verified customer') + '</cite></blockquote>';
+				} else if (testimonialEl) {
+					testimonialEl.innerHTML = '';
+				}
 				renderPrimary(payload.primary);
 				renderSecondary(payload.secondary);
 				showStep('results');
