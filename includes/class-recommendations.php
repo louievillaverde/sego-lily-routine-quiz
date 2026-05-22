@@ -42,20 +42,24 @@ class SLRQ_Recommendations {
 		switch ( $skin_concern ) {
 
 			case 'Wrinkles & dark spots':
+				// Default to scented Mandarin Orange (no sensitivity signal here);
+				// Baby + Mom Pure Butter routes through the Sensitivity path only.
 				return array(
-					'primary'   => self::ageless( $is_sensitive ? 'rosewood-lavender' : 'honey-creme' ),
-					'secondary' => self::renewal( 'unscented' ),
+					'primary'   => self::ageless( 'honey-creme' ),
+					'secondary' => self::renewal( 'mandarin-orange' ),
 					'why'       => $why,
 				);
 
 			case 'Dryness & tightness':
 				return array(
 					'primary'   => self::renewal( 'mandarin-orange' ),
-					'secondary' => self::ageless( $is_sensitive ? 'rosewood-lavender' : 'honey-creme' ),
+					'secondary' => self::ageless( 'honey-creme' ),
 					'why'       => $why,
 				);
 
 			case 'Redness & sensitivity':
+				// The one path where Baby + Mom Pure Butter is the right answer:
+				// it IS our most reactive-safe formulation in the line.
 				return array(
 					'primary'   => self::renewal( 'unscented' ),
 					'secondary' => self::ageless( 'rosewood-lavender' ),
@@ -63,8 +67,11 @@ class SLRQ_Recommendations {
 				);
 
 			case 'Breakouts':
+				// Adult acne is inflammation, not reactivity — scented Mandarin
+				// Orange works (still non-comedogenic), no need for the
+				// Baby + Mom positioning.
 				return array(
-					'primary'   => self::renewal( 'unscented' ),
+					'primary'   => self::renewal( 'mandarin-orange' ),
 					'secondary' => self::ageless( 'honey-creme' ),
 					'why'       => $why,
 				);
@@ -72,7 +79,7 @@ class SLRQ_Recommendations {
 			default:
 				return array(
 					'primary'   => self::ageless( 'honey-creme' ),
-					'secondary' => self::renewal( 'unscented' ),
+					'secondary' => self::renewal( 'mandarin-orange' ),
 					'why'       => $why,
 				);
 		}
@@ -80,40 +87,40 @@ class SLRQ_Recommendations {
 
 	/**
 	 * Per-combination "why" copy. 4 skin concerns x 4 frustrations = 16
-	 * variants. Each opens by validating the frustration, then explains the
-	 * mechanism specific to the concern, then closes with a number or
-	 * timeline. No age callouts (the user has already self-selected, no
-	 * need to gate by birth year).
+	 * product-specific variants. Each one validates the user's lived pain
+	 * deeply in the first 2-3 sentences (no clinical detachment), explains
+	 * the mechanism, then introduces the products as the no-brainer answer.
+	 * Both products are named explicitly. No em dashes. No age callouts.
 	 */
 	private static function why_for( $skin_concern, $frustration ) {
 		$map = array(
 			'Wrinkles & dark spots' => array(
-				'Nothing works long enough'   => 'Most anti-aging products work for a few hours then quit on you. Your skin&rsquo;s lipid production has been declining, and lab actives can&rsquo;t refill those lipids long-term. Tallow can, because your skin reads it as its own. Softer texture in 4 to 6 weeks, sustained.',
-				'Too many products'           => 'You&rsquo;re trying to fight a biology problem with shelf volume. Your skin stopped making the lipids that keep it firm. Layering 6 actives doesn&rsquo;t replace what&rsquo;s missing. Two jars of the right thing does.',
-				"Don't trust ingredients"     => 'Most anti-aging products list 15+ ingredients you can&rsquo;t pronounce. Your skin doesn&rsquo;t recognize them, which is why they don&rsquo;t last. Tallow is structurally identical to your skin&rsquo;s own lipids. Softer texture in 4 to 6 weeks.',
-				'Just want something simple'  => 'The whole anti-aging story is simpler than the industry makes it. Your skin stopped making the lipids that keep it firm. Tallow puts them back. Two jars, twice a day.',
+				'Nothing works long enough'   => 'You buy the cream. It works for a few weeks. Your skin slides back. You try another, same pattern. The issue isn&rsquo;t your routine, it&rsquo;s the chemistry: stabilized actives can&rsquo;t replace the lipids your skin actually needs. <strong>Ageless Honey Creme</strong> is whipped tallow rich in vitamins A, D, E, K, the exact nutrients your skin&rsquo;s been making less of. <strong>Renewal Mandarin Orange</strong> at night locks it in. Softer texture in 4 to 6 weeks.',
+				'Too many products'           => 'Your bathroom shelf has a serum, a cream, an eye cream, a treatment, probably a retinol. Each one fighting the same problem with a different active. Your skin isn&rsquo;t confused, it&rsquo;s overloaded. <strong>Ageless Honey Creme</strong> is the lipid replacement all those actives are trying to mimic. <strong>Renewal Mandarin Orange</strong> at night locks it in. Two jars replace the shelf.',
+				"Don't trust ingredients"     => 'You read every label. You can&rsquo;t pronounce half of them. And the ones you CAN pronounce are usually solvents and stabilizers. <strong>Ageless Honey Creme</strong> has six ingredients: grass-fed tallow, raw honey, olive oil, vitamin E, jojoba, beeswax. <strong>Renewal Mandarin Orange</strong> is similar. Your skin recognizes all of them.',
+				'Just want something simple'  => 'You don&rsquo;t want to learn skincare chemistry. You want products that work without a 5-step routine. <strong>Ageless Honey Creme</strong> rebuilds the lipid barrier in the morning. <strong>Renewal Mandarin Orange</strong> locks it in at night. Two jars, twice a day. That&rsquo;s it.',
 			),
 			'Dryness & tightness' => array(
-				'Nothing works long enough'   => 'Most moisturizers wear off in a few hours. They&rsquo;re water-based, and water evaporates. Your skin needs the fats that hold moisture in. Tallow is mostly those fats. It absorbs in 30 seconds and stays for 8 hours.',
-				'Too many products'           => 'You don&rsquo;t need a 6-step routine. You need one product that actually moisturizes. Most lotions are water-based and evaporate. Tallow is mostly fats your skin recognizes and stays for 8 hours.',
-				"Don't trust ingredients"     => 'Most moisturizers list 20+ ingredients, most of them solvents and stabilizers. Your skin needs the fats that hold water in, not the chemistry holding the formula together. Renewal has 5 ingredients, no fillers.',
-				'Just want something simple'  => 'Tight skin means your barrier can&rsquo;t hold moisture. The fix is fats your skin recognizes, not more products. Tallow absorbs in 30 seconds and locks moisture for 8 hours. Two jars.',
+				'Nothing works long enough'   => 'You apply moisturizer. An hour later your skin feels tight again. Two hours later you&rsquo;re reapplying. Most lotions are water-based, and water evaporates. Your skin needs fats to hold water in. <strong>Renewal Mandarin Orange</strong> is whipped tallow plus organic oils, the fat your skin recognizes. <strong>Ageless Honey Creme</strong> on top reinforces the barrier overnight. Moisture stays 8 hours, not one.',
+				'Too many products'           => 'Hyaluronic serum, hydrating toner, gel cream, sleeping mask. You stack four products to feel moisturized for a few hours. The stack doesn&rsquo;t fix the actual problem: your skin can&rsquo;t hold water because the lipids are missing. <strong>Renewal Mandarin Orange</strong> puts those lipids back. <strong>Ageless Honey Creme</strong> at night reinforces. Softer skin in 2 to 3 weeks.',
+				"Don't trust ingredients"     => 'Most moisturizers list 20+ ingredients. Most of them are solvents, stabilizers, fillers, not what your skin actually absorbs. <strong>Renewal Mandarin Orange</strong> has five: tallow, organic oils, vitamin E, beeswax, mandarin essential oil. <strong>Ageless Honey Creme</strong> is similar. Nothing your skin won&rsquo;t recognize.',
+				'Just want something simple'  => 'Tight skin means your barrier can&rsquo;t hold moisture. The fix is fats your skin recognizes, not more products. <strong>Renewal Mandarin Orange</strong> in the morning (whipped tallow, absorbs in 30 seconds). <strong>Ageless Honey Creme</strong> at night (vitamins A, D, E, K). Done.',
 			),
 			'Redness & sensitivity' => array(
-				'Nothing works long enough'   => 'If most products start fine then your skin reacts a few days in, the issue is ingredient overload. Renewal Unscented has 5 ingredients, all food-grade. Nothing reactive to build up. Safe even for newborns.',
-				'Too many products'           => 'Reactive skin doesn&rsquo;t need more products. It needs fewer ingredients. Most products have 15 to 30 of them. Renewal Unscented has 5, all food-grade.',
-				"Don't trust ingredients"     => 'Reactive skin reacts because it identifies foreign ingredients fast. Most products have 15 to 30 of them. Renewal Unscented has 5: tallow, a touch of organic oil, vitamin E, that&rsquo;s it. Safe for newborns, rosacea, post-procedure.',
-				'Just want something simple'  => 'The simplest answer for reactive skin is the fewest ingredients possible. Renewal Unscented has 5, all food-grade. Safe for newborns and rosacea. One jar covers most situations.',
+				'Nothing works long enough'   => 'You find something that works. A week in, your skin flares. Another product, another flare. The products themselves are the issue: 15 to 30 ingredients each, your skin reacts to one of them, you don&rsquo;t know which. <strong>Baby + Mom Pure Butter</strong> has five (Holly named it for newborn skin, but it&rsquo;s our most reactive-safe formulation, period). <strong>Ageless Rosewood Lavender</strong> is the gentlest scented option in the line.',
+				'Too many products'           => 'Your routine keeps growing because nothing alone works. But every new product is another 15 to 30 ingredients your skin has to recognize. <strong>Baby + Mom Pure Butter</strong> has five total, all food-grade. <strong>Ageless Rosewood Lavender</strong> has six. Reactive skin doesn&rsquo;t need more, it needs less.',
+				"Don't trust ingredients"     => 'You read every label. Most labels make you nervous. <strong>Baby + Mom Pure Butter</strong> has five ingredients you&rsquo;d recognize from a kitchen: whipped tallow, olive oil, beeswax, vitamin E, jojoba. <strong>Ageless Rosewood Lavender</strong> is similar. Safe for newborns, rosacea, post-procedure.',
+				'Just want something simple'  => 'Reactive skin needs the fewest possible ingredients, full stop. <strong>Baby + Mom Pure Butter</strong> has five (Holly named it for newborns, but it&rsquo;s the gentlest formulation in the line for any sensitive adult skin). <strong>Ageless Rosewood Lavender</strong> if you want a daytime layer.',
 			),
 			'Breakouts' => array(
-				'Nothing works long enough'   => 'If your acne products work for a week then your skin flares again, the issue is your barrier. Stripping treatments calm breakouts short-term but inflame the barrier long-term. Tallow calms without stripping and is non-comedogenic.',
-				'Too many products'           => 'You don&rsquo;t need 5 acne products. Most acne routines inflame your barrier, which makes oil overproduction worse. Tallow calms the barrier and won&rsquo;t clog pores.',
-				"Don't trust ingredients"     => 'Most acne products list harsh actives and stabilizers your skin reacts to. Tallow is one ingredient, structurally identical to what your skin makes. Non-comedogenic. Calms inflammation instead of triggering it.',
-				'Just want something simple'  => 'Adult breakouts are usually a barrier problem, not an oil problem. The simplest fix: stop using actives that inflame the barrier. Tallow calms and won&rsquo;t clog pores.',
+				'Nothing works long enough'   => 'Your acne products work for a week. Your skin flares. You try a stronger one. Same thing. The cycle is the products themselves: stripping treatments calm breakouts short-term but inflame the barrier long-term, and inflamed barriers cause more breakouts. <strong>Renewal Mandarin Orange</strong> calms the barrier (whipped tallow, non-comedogenic). <strong>Ageless Honey Creme</strong> on top for texture repair.',
+				'Too many products'           => 'Cleanser, toner, treatment, serum, spot cream. Your face has had a 5-step war declared on it. The war is making it worse: each strip-and-treat product inflames the barrier, which makes oil overproduction worse, which causes more breakouts. <strong>Renewal Mandarin Orange</strong> calms (whipped tallow, non-comedogenic). <strong>Ageless Honey Creme</strong> supports texture repair.',
+				"Don't trust ingredients"     => 'Most acne products list sulfates, retinoids, salicylic acid, parabens. Things you wouldn&rsquo;t put in your kitchen. <strong>Renewal Mandarin Orange</strong> has six ingredients, mostly tallow and organic oils, all food-grade. <strong>Ageless Honey Creme</strong> is similar. Non-comedogenic, won&rsquo;t trigger reactive flare.',
+				'Just want something simple'  => 'Adult breakouts are a barrier problem, not an oil problem. Stop fighting your skin with actives. <strong>Renewal Mandarin Orange</strong> calms the barrier (whipped tallow, non-comedogenic). <strong>Ageless Honey Creme</strong> supports texture repair. Two jars.',
 			),
 		);
 
-		$default = 'A clean two-product routine that fits most starting points. Ageless rebuilds your lipid barrier through the day. Renewal locks in deeper moisture overnight.';
+		$default = 'A clean two-product routine that fits most starting points. <strong>Ageless Honey Creme</strong> rebuilds your lipid barrier through the day. <strong>Renewal Mandarin Orange</strong> locks in deeper moisture overnight.';
 
 		if ( ! isset( $map[ $skin_concern ] ) ) {
 			return $default;
@@ -122,8 +129,7 @@ class SLRQ_Recommendations {
 		if ( isset( $concern_map[ $frustration ] ) ) {
 			return $concern_map[ $frustration ];
 		}
-		// Frustration may carry curly apostrophe ('Don’t') or HTML entity.
-		// Normalize both sides for a tolerant lookup.
+		// Normalize curly apostrophe / HTML entity for tolerant lookup.
 		$normalized = str_replace( array( "\xE2\x80\x99", "&rsquo;" ), "'", $frustration );
 		foreach ( $concern_map as $key => $value ) {
 			$norm_key = str_replace( array( "\xE2\x80\x99", "&rsquo;" ), "'", $key );
@@ -133,7 +139,6 @@ class SLRQ_Recommendations {
 		}
 		return reset( $concern_map );
 	}
-
 	private static function ageless( $scent ) {
 		$scents = array(
 			'honey-creme'       => 'Honey Creme',
