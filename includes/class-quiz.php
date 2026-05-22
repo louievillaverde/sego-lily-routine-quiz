@@ -458,7 +458,7 @@ class SLRQ_Quiz {
 				document.getElementById('lprq-result-greeting').textContent = 'For ' + (quizData.firstname || 'you');
 				var reass = document.getElementById('lprq-reassurance');
 				if (reass) {
-					reass.textContent = 'We saved your match. Holly will check in via email.';
+					reass.textContent = 'Saved your match. I’ll check in via email.';
 				}
 				document.getElementById('lprq-result-why').innerHTML = payload.why || '';
 				renderPrimary(payload.primary);
