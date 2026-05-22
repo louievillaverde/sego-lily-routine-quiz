@@ -25,11 +25,26 @@ class SLRQ_Recommendations {
 	 * @param string $frustration   Frustration answer.
 	 * @return array { primary, secondary, why }
 	 */
-	public static function pair_for( $skin_concern, $frustration = '', $product_count = '' ) {
-		$default = self::default_pair( $skin_concern, $frustration, $product_count );
-		// Build add_both_url with primary + secondary slugs + scents so the
-		// slrq_action endpoint can look up variation IDs and add both products
-		// in one click. Routes through /?slrq_action=add_routine.
+	public static function pair_for( $skin_concern, $frustration = '', $product_count = '', $firstname = '' ) {
+		$default = self::default_pair( $skin_concern, $frustration, $product_count, $firstname );
+
+		// If Moxie is the secondary, rewrite the "why" text so it references
+		// Moxie instead of Renewal Mandarin Orange (the canonical secondary).
+		// Quick + safe template approach — replace the strong-tag mention.
+		if ( ( $default['secondary']['slug'] ?? '' ) === 'moxie-bourbon-coffee' || strpos( $default['secondary']['slug'] ?? '', 'moxie-' ) === 0 ) {
+			$default['why'] = str_replace(
+				array(
+					'<strong>Renewal Mandarin Orange</strong>',
+					'Renewal Mandarin Orange',
+				),
+				'<strong>Moxie Intensive Moisture</strong>',
+				$default['why']
+			);
+			// Append a "for him" framing line so the swap reads intentional.
+			$default['why'] .= ' <em>(Holly built Moxie for thicker skin and beard areas with the same tallow base as the rest of the line.)</em>';
+		}
+
+		// Build add_both_url with primary + secondary slugs + scents
 		$default['add_both_url'] = self::add_routine_url(
 			$default['primary']['slug'] ?? '',
 			$default['primary']['scent'] ?? '',
@@ -39,33 +54,35 @@ class SLRQ_Recommendations {
 		return apply_filters( 'lprq_recommendation', $default, $skin_concern, $frustration );
 	}
 
-	private static function default_pair( $skin_concern, $frustration, $product_count = '' ) {
+	private static function default_pair( $skin_concern, $frustration, $product_count = '', $firstname = '' ) {
 		$is_sensitive  = ( $skin_concern === 'Redness & sensitivity' );
 		$is_simplifier = in_array( $frustration, array( 'Too many products', 'Just want something simple' ), true );
+		$is_male       = self::is_likely_male( $firstname );
 
 		$why = self::why_for( $skin_concern, $frustration, $product_count );
 
+		// For male users, swap secondary to Moxie (Holly's men's positioning)
+		// in non-sensitivity paths. Sensitivity needs unscented, so keep Baby + Mom.
 		switch ( $skin_concern ) {
 
 			case 'Wrinkles & dark spots':
-				// Default to scented Mandarin Orange (no sensitivity signal here);
-				// Baby + Mom Pure Butter routes through the Sensitivity path only.
 				return array(
 					'primary'   => self::ageless( 'honey-creme' ),
-					'secondary' => self::renewal( 'mandarin-orange' ),
+					'secondary' => $is_male ? self::moxie() : self::renewal( 'mandarin-orange' ),
 					'why'       => $why,
 				);
 
 			case 'Dryness & tightness':
 				return array(
 					'primary'   => self::renewal( 'mandarin-orange' ),
-					'secondary' => self::ageless( 'honey-creme' ),
+					'secondary' => $is_male ? self::moxie() : self::ageless( 'honey-creme' ),
 					'why'       => $why,
 				);
 
 			case 'Redness & sensitivity':
-				// The one path where Baby + Mom Pure Butter is the right answer:
-				// it IS our most reactive-safe formulation in the line.
+				// Sensitivity needs unscented — Baby + Mom Pure Butter is the right
+				// product here regardless of gender (scented Moxie would trigger
+				// reactive skin).
 				return array(
 					'primary'   => self::renewal( 'unscented' ),
 					'secondary' => self::ageless( 'rosewood-lavender' ),
@@ -73,19 +90,16 @@ class SLRQ_Recommendations {
 				);
 
 			case 'Breakouts':
-				// Adult acne is inflammation, not reactivity — scented Mandarin
-				// Orange works (still non-comedogenic), no need for the
-				// Baby + Mom positioning.
 				return array(
 					'primary'   => self::renewal( 'mandarin-orange' ),
-					'secondary' => self::ageless( 'honey-creme' ),
+					'secondary' => $is_male ? self::moxie() : self::ageless( 'honey-creme' ),
 					'why'       => $why,
 				);
 
 			default:
 				return array(
 					'primary'   => self::ageless( 'honey-creme' ),
-					'secondary' => self::renewal( 'mandarin-orange' ),
+					'secondary' => $is_male ? self::moxie() : self::renewal( 'mandarin-orange' ),
 					'why'       => $why,
 				);
 		}
@@ -285,6 +299,92 @@ class SLRQ_Recommendations {
 	 * WC product slugs are the parent product, e.g. 'ageless-tallow-butter'.
 	 */
 	/**
+	 * Moxie Intensive Moisture — Holly is positioning this as her men's
+	 * line. Used as the secondary product when a male user takes the quiz
+	 * (except in the sensitivity path, which routes to unscented).
+	 *
+	 * Default scent: Bourbon Coffee (strongest masculine positioning).
+	 */
+	private static function moxie( $scent = 'bourbon-coffee' ) {
+		$scents = array(
+			'bourbon-coffee' => 'Bourbon Coffee',
+			'eucalyptus'     => 'Eucalyptus',
+			'vanilla-spice'  => 'Vanilla Spice',
+		);
+		$wc_slug   = 'moxie-intensive-moisture';
+		$wc_id     = self::wc_product_id( $wc_slug );
+		$scent_lbl = $scents[ $scent ] ?? 'Bourbon Coffee';
+		$pdp_url   = self::pdp_url( $wc_slug, array( 'attribute_scent' => $scent_lbl ) );
+		return array(
+			'slug'              => 'moxie-' . $scent,
+			'name'              => 'Moxie Intensive Moisture',
+			'scent'             => $scent_lbl,
+			'blurb'             => 'For him &middot; Face &middot; Beard &middot; Body',
+			'badge'             => 'Men&rsquo;s pick',
+			'shop_url'          => $pdp_url,
+			'add_to_cart_url'   => self::add_one_url( $wc_slug, $scent_lbl ),
+			'product_id'        => $wc_id,
+			'image_url'         => apply_filters( 'lprq_product_image', '', 'moxie', $scent ),
+		);
+	}
+
+	/**
+	 * Lightweight gender inference from first name. Hardcoded list of
+	 * ~150 common US male first names. ~85% accurate for matched names,
+	 * defaults to false (gender-neutral) for unknown names. Good enough
+	 * for "default to male secondary" routing without forcing users to
+	 * answer a gender question explicitly.
+	 *
+	 * @param string $firstname
+	 * @return bool true if firstname strongly indicates male
+	 */
+	private static function is_likely_male( $firstname ) {
+		$name = strtolower( trim( $firstname ) );
+		if ( empty( $name ) ) {
+			return false;
+		}
+		static $males = null;
+		if ( $males === null ) {
+			$males = array_flip( array(
+				'aaron','adam','adrian','alan','albert','alex','alexander','andrew','anthony','arthur',
+				'austin','barry','ben','benjamin','bernard','bill','billy','bob','bobby','brad','bradley',
+				'brandon','brent','brett','brian','bruce','bryan','bryce','caleb','calvin','cameron',
+				'carl','carlos','casey','chad','charles','charlie','chase','chris','christian','christopher',
+				'clark','cody','colby','cole','colin','connor','corey','cory','craig','curtis',
+				'damon','dan','daniel','danny','darrell','darren','dave','david','dean','dennis',
+				'derek','derrick','devin','diego','dirk','don','donald','doug','douglas','drew','duane',
+				'dustin','dwayne','dylan','earl','eddie','edgar','edward','eli','elias','elliot',
+				'emmanuel','enrique','eric','erik','ernest','ethan','eugene','evan','everett',
+				'felix','fernando','francisco','frank','franklin','fred','frederick','gabriel','gary','gavin',
+				'george','gerald','gilbert','glenn','gordon','grant','greg','gregory','harold','harry',
+				'harvey','henry','herbert','holden','howard','hugh','hugo','hunter','ian','isaac','isaiah',
+				'jack','jackson','jacob','jaden','jake','james','jamie','jared','jason','javier',
+				'jay','jayden','jeff','jeffery','jeffrey','jeremiah','jeremy','jerome','jerry','jesse',
+				'jim','jimmy','joaquin','joe','joel','joey','john','johnny','jon','jonathan','jordan','jorge',
+				'jose','joseph','josh','joshua','juan','judd','julian','justin','karl','keenan','keith',
+				'kelly','kelvin','ken','kendrick','kenneth','kenny','kent','kevin','kirk','kurt','kyle',
+				'lance','larry','lawrence','lee','leo','leon','leonard','leroy','lewis','liam','lloyd',
+				'logan','lonnie','louie','louis','lucas','luis','luke','manuel','marcus','mario','mark',
+				'marshall','martin','marvin','mason','matt','matthew','maurice','max','maxwell','melvin',
+				'michael','micheal','miguel','mike','milton','mitchell','morgan','nate','nathan','nathaniel',
+				'neal','neil','nelson','nicholas','nick','noah','norman','oliver','omar','oscar','otis',
+				'owen','pablo','parker','patrick','paul','pedro','perry','pete','peter','phil','philip',
+				'phillip','quincy','quinn','rafael','ralph','randy','ray','raymond','reggie','rene',
+				'reuben','rex','ricardo','rich','richard','rick','ricky','rob','robbie','robert','roberto',
+				'rocco','rodney','roger','roland','roman','ron','ronald','ronnie','ross','roy','ruben',
+				'russell','ryan','sam','samuel','scott','sean','sebastian','seth','shane','shawn','sidney',
+				'silas','simon','solomon','spencer','stan','stanley','stephen','steve','steven','stuart',
+				'ted','terrance','terrell','terrence','terry','theodore','thomas','tim','timmy','timothy',
+				'tobias','todd','tom','tommy','tony','tracy','travis','trent','trevor','tristan','troy',
+				'tucker','ty','tyler','tyrone','vance','vernon','victor','vincent','virgil','wade',
+				'walter','warren','wayne','wendell','wes','wesley','will','william','willie','wilson',
+				'winston','wyatt','xander','xavier','zach','zachary','zack',
+			) );
+		}
+		return isset( $males[ $name ] );
+	}
+
+	/**
 	 * Single-product direct-cart URL.
 	 */
 	public static function add_one_url( $wc_slug, $scent = '' ) {
@@ -310,6 +410,9 @@ class SLRQ_Recommendations {
 		}
 		if ( strpos( $internal_slug, 'renewal-' ) === 0 ) {
 			return 'renewal-tallow-butter';
+		}
+		if ( strpos( $internal_slug, 'moxie-' ) === 0 ) {
+			return 'moxie-intensive-moisture';
 		}
 		return $internal_slug;
 	}

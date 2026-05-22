@@ -561,7 +561,7 @@ class SLRQ_Quiz {
 			wp_send_json_error( array( 'message' => 'Looks like an answer is missing.' ) );
 		}
 
-		$recommendation = SLRQ_Recommendations::pair_for( $skin_concern, $frustration, $product_count );
+		$recommendation = SLRQ_Recommendations::pair_for( $skin_concern, $frustration, $product_count, $firstname );
 
 		$mautic_result = SLRQ_Mautic::send_quiz_lead( array(
 			'email'         => $email,
