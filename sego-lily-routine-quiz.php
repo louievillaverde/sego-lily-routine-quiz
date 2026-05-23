@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.36
+ * Version:           1.13.37
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.36' );
+define( 'SLRQ_VERSION', '1.13.37' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -92,9 +92,9 @@ add_action( 'wp_head', function() {
 	.woocommerce-cart .woocommerce { font-family: Georgia, 'Times New Roman', serif; }
 	.woocommerce-cart .woocommerce-notices-wrapper { max-width: 760px; margin: 0 auto 16px; }
 
-	.woocommerce-cart .shop_table { border: none; margin-bottom: 28px; width: 100%; border-collapse: collapse; background: #F7F6F3; }
-	.woocommerce-cart .shop_table th { background: #F7F6F3; color: #2C2C2C; font-family: Georgia, 'Times New Roman', serif; font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; padding: 14px 16px; border: none; border-bottom: 1px solid #E8E2D6; text-align: left; font-weight: 700; }
-	.woocommerce-cart .shop_table td { padding: 16px; border-bottom: 1px solid #E8E2D6; vertical-align: middle; background: #F7F6F3; }
+	.woocommerce-cart .shop_table { border: none; margin-bottom: 28px; width: 100%; border-collapse: collapse; background: transparent; }
+	.woocommerce-cart .shop_table th { background: transparent; color: #2C2C2C; font-family: Georgia, 'Times New Roman', serif; font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; padding: 14px 16px; border: none; border-bottom: 1px solid #E8E2D6; text-align: left; font-weight: 700; }
+	.woocommerce-cart .shop_table td { padding: 16px; border-bottom: 1px solid #E8E2D6; vertical-align: middle; background: transparent; }
 	.woocommerce-cart .shop_table .product-thumbnail img { max-width: 84px; height: auto; border-radius: 10px; }
 	.woocommerce-cart .shop_table .product-name { font-weight: 600; color: #2C2C2C; }
 	.woocommerce-cart .shop_table .product-name a { color: #386174; text-decoration: none; }
@@ -134,8 +134,8 @@ add_action( 'wp_head', function() {
 	@media (max-width: 600px) {
 		.woocommerce-cart .entry-content { padding: 16px 12px 36px; }
 		.woocommerce-cart .shop_table thead { display: none; }
-		.woocommerce-cart .shop_table tbody tr { display: block; margin-bottom: 14px; padding: 14px; background: #F7F6F3; border: 1px solid #E8E2D6; border-radius: 12px; }
-		.woocommerce-cart .shop_table tbody td { display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 8px 0 !important; border-bottom: 1px dashed #E8E2D6 !important; }
+		.woocommerce-cart .shop_table tbody tr { display: block; margin-bottom: 14px; padding: 22px 18px; background: #F7F6F3; border: 1px solid #E8E2D6; border-radius: 12px; }
+		.woocommerce-cart .shop_table tbody td { display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 10px 0 !important; border-bottom: 1px dashed #E8E2D6 !important; }
 		.woocommerce-cart .shop_table tbody td:last-child { border-bottom: none !important; }
 		.woocommerce-cart .shop_table tbody td:before { content: attr(data-title); font-weight: 700; color: #8A9499; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; text-align: left; flex: 0 0 auto; }
 		/* Product image: force visible block layout with explicit min-height
@@ -285,6 +285,45 @@ add_filter( 'woocommerce_cart_item_subtotal', function( $subtotal_html, $cart_it
  * sees a misconfigured-for-subs cart), the hook silently skips and the
  * customer can still type the code manually.
  */
+/**
+ * URL-based coupon auto-apply. Append ?apply_coupon=FREESHIPPING (or any
+ * coupon code) to any URL on the site. The coupon applies on next cart
+ * recalc. Standard pattern Stripe + many ecom platforms use; lets LV
+ * embed pre-applied coupons in email CTAs without depending on the
+ * time-window fallback below.
+ *
+ * Example: https://segolilyskincare.com/cart/?apply_coupon=FREESHIPPING
+ */
+add_action( 'wp_loaded', function() {
+	if ( empty( $_GET['apply_coupon'] ) && empty( $_GET['coupon'] ) ) return;
+	if ( ! function_exists( 'WC' ) || ! WC()->cart ) return;
+	$code = sanitize_text_field( wp_unslash( $_GET['apply_coupon'] ?? $_GET['coupon'] ?? '' ) );
+	if ( empty( $code ) ) return;
+	if ( WC()->cart->has_discount( $code ) ) return;
+	if ( ! class_exists( 'WC_Coupon' ) ) return;
+	$coupon = new WC_Coupon( $code );
+	if ( ! $coupon->get_id() ) return;
+	$notices_before = function_exists( 'wc_get_notices' ) ? wc_get_notices() : array();
+	WC()->cart->apply_coupon( $code );
+	if ( function_exists( 'wc_set_notices' ) ) {
+		wc_set_notices( $notices_before );
+	}
+	WC()->cart->calculate_totals();
+}, 30 );
+
+/**
+ * Force WC to display the coupon CODE (e.g., "FREESHIPPING") instead of
+ * the coupon description (e.g., "Free shipping coupon") in the cart /
+ * checkout totals applied-coupons list. Cleaner UX: customer sees the
+ * actual code that's active.
+ */
+add_filter( 'woocommerce_cart_totals_coupon_label', function( $label, $coupon ) {
+	if ( is_object( $coupon ) && method_exists( $coupon, 'get_code' ) ) {
+		return strtoupper( $coupon->get_code() );
+	}
+	return $label;
+}, 10, 2 );
+
 add_action( 'template_redirect', function() {
 	if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
 	if ( ! function_exists( 'WC' ) || ! WC()->cart ) return;
@@ -342,7 +381,7 @@ add_filter( 'lprq_product_image', function( $url, $product, $scent ) {
 			'unscented'       => $base . 'babymom3-300x300.webp',
 			'default'         => $base . 'renewal_mandarin_orange_1x-600x600.webp',
 		),
-		'moxie'    => $base . 'moxie_vanilla_spice_1x-600x600.webp',
+		'moxie'    => $base . 'moxie_bourbon_coffee_1x.webp',
 	);
 	if ( $product === 'ageless' ) {
 		return $map['ageless'];

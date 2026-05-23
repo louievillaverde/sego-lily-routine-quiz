@@ -45,20 +45,20 @@ class SLRQ_Recommendations {
 			$swap_from = 'Ageless Honey Creme';
 			$default['why'] = str_replace(
 				array( '<strong>' . $swap_from . '</strong>', $swap_from ),
-				'<strong>Moxie Intensive Moisture</strong>',
+				'<strong>Moxie Bourbon Coffee</strong>',
 				$default['why']
 			);
 			// Each why variant mentions the secondary product in its own standalone
 			// sentence ("<strong>X</strong> at night ...."). The str_replace above
-			// rewrote that sentence to start with "<strong>Moxie Intensive Moisture</strong>".
+			// rewrote that sentence to start with "<strong>Moxie Bourbon Coffee</strong>".
 			// Find the whole sentence (up to its first period) and replace it with
 			// the for-him Moxie pitch, which carries the real reason Moxie earns a
 			// spot in the routine: thicker formula for facial skin under a beard,
 			// hands that actually work, body, heavier moisture men's skin needs.
 			// One-step swap, no duplication.
-			$moxie_pitch = '<strong>Moxie Intensive Moisture</strong> is built thicker on purpose. Holly designed it for facial skin under a beard, hands that actually work, and the heavier moisture most men&rsquo;s skin needs through the day. Same clean tallow base as the rest of the line, just denser.';
+			$moxie_pitch = '<strong>Moxie Bourbon Coffee</strong> is built thicker on purpose. Holly designed it for facial skin under a beard, hands that actually work, and the heavier moisture most men&rsquo;s skin needs through the day. Same clean tallow base as the rest of the line, just denser.';
 			$swap = preg_replace(
-				'/<strong>Moxie Intensive Moisture<\/strong>[^.]*?\./',
+				'/<strong>Moxie Bourbon Coffee<\/strong>[^.]*?\./',
 				$moxie_pitch,
 				$default['why'],
 				1
@@ -388,7 +388,7 @@ class SLRQ_Recommendations {
 	 * WC product slugs are the parent product, e.g. 'ageless-tallow-butter'.
 	 */
 	/**
-	 * Moxie Intensive Moisture. Holly is positioning this as her men's
+	 * Moxie Bourbon Coffee. Holly is positioning this as her men's
 	 * line. Used as the secondary product when a male user takes the quiz
 	 * (except in the sensitivity path, which routes to unscented).
 	 *
@@ -404,9 +404,14 @@ class SLRQ_Recommendations {
 		$wc_id     = self::wc_product_id( $wc_slug );
 		$scent_lbl = $scents[ $scent ] ?? 'Bourbon Coffee';
 		$pdp_url   = self::pdp_url( $wc_slug, array( 'attribute_scent' => $scent_lbl ) );
+		// Display name follows brand + scent format (consistent with Renewal
+		// Mandarin Orange + Ageless Honey Creme). The underlying WC product
+		// is still "Moxie Bourbon Coffee" (different scent variations);
+		// quiz copy says "Moxie Bourbon Coffee" to match how customers see
+		// the other product names in the quiz results.
 		return array(
 			'slug'              => 'moxie-' . $scent,
-			'name'              => 'Moxie Intensive Moisture',
+			'name'              => 'Moxie ' . $scent_lbl,
 			'scent'             => $scent_lbl,
 			'blurb'             => 'For him &middot; Face &middot; Beard &middot; Body',
 			'badge'             => 'Men&rsquo;s pick',
