@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.35
+ * Version:           1.13.36
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.35' );
+define( 'SLRQ_VERSION', '1.13.36' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -285,10 +285,12 @@ add_filter( 'woocommerce_cart_item_subtotal', function( $subtotal_html, $cart_it
  * sees a misconfigured-for-subs cart), the hook silently skips and the
  * customer can still type the code manually.
  */
-add_action( 'woocommerce_before_calculate_totals', function( $cart ) {
+add_action( 'template_redirect', function() {
 	if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
 	if ( ! function_exists( 'WC' ) || ! WC()->cart ) return;
-	if ( ! $cart || ! is_object( $cart ) ) return;
+	if ( ! function_exists( 'is_cart' ) || ! function_exists( 'is_checkout' ) ) return;
+	if ( ! is_cart() && ! is_checkout() ) return;
+	if ( WC()->cart->is_empty() ) return;
 
 	$mt    = new DateTimeZone( 'America/Denver' );
 	$now   = new DateTime( 'now', $mt );
@@ -298,30 +300,22 @@ add_action( 'woocommerce_before_calculate_totals', function( $cart ) {
 
 	$code = apply_filters( 'lprq_auto_coupon_code', 'freeshipping' );
 	if ( empty( $code ) ) return;
-	if ( method_exists( $cart, 'has_discount' ) && $cart->has_discount( $code ) ) return;
+	if ( WC()->cart->has_discount( $code ) ) return;
 
-	// Verify the coupon exists in WC before attempting to apply (cheap check
-	// that avoids errors if the code was deleted). DO NOT use
-	// WC_Discounts::is_coupon_valid here — it returns a WP_Error on
-	// variable-subscription carts even when the coupon would actually apply
-	// fine, silently blocking auto-apply for Holly's subscription products.
-	if ( class_exists( 'WC_Coupon' ) ) {
-		$coupon = new WC_Coupon( $code );
-		if ( ! $coupon->get_id() ) return;
-	}
+	if ( ! class_exists( 'WC_Coupon' ) ) return;
+	$coupon = new WC_Coupon( $code );
+	if ( ! $coupon->get_id() ) return;
 
-	// Snapshot notices before apply, restore after. This swallows any
-	// success/error/notice that apply_coupon would surface to the customer
-	// (we don't want them to see a Mautic-style "Applied!" toast every cart
-	// load, nor any WC Subs warnings). The coupon is still actually applied.
+	// Apply with notice suppression so the customer never sees a confusing
+	// auto-apply notice on every cart load. The coupon is still applied;
+	// only the notice toast is hidden.
 	$notices_before = function_exists( 'wc_get_notices' ) ? wc_get_notices() : array();
-	if ( method_exists( $cart, 'apply_coupon' ) ) {
-		$cart->apply_coupon( $code );
-	}
+	WC()->cart->apply_coupon( $code );
 	if ( function_exists( 'wc_set_notices' ) ) {
 		wc_set_notices( $notices_before );
 	}
-}, 10, 1 );
+	WC()->cart->calculate_totals();
+}, 5 );
 
 /**
  * Memorial Day 2026 free-shipping callout has been intentionally disabled.
