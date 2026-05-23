@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.38
+ * Version:           1.13.39
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.38' );
+define( 'SLRQ_VERSION', '1.13.39' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -137,17 +137,34 @@ add_action( 'wp_head', function() {
 		/* Card styling SCOPED to product rows only (.cart_item). The cart_totals
 		   table (Subtotal / Shipping / Total) doesn't get the boxed-card
 		   treatment so its internal shipping radios + change-address link
-		   render with standard WC layout, not the data-title flex pattern. */
+		   render with standard WC layout. Layout pattern: GRID with label left
+		   (1fr) and value right (2fr) so long variation text never gets
+		   squished into a right-aligned single line. */
 		.woocommerce-cart .shop_table tbody tr.cart_item { display: block; margin-bottom: 14px; padding: 22px 18px; background: #F7F6F3; border: 1px solid #E8E2D6; border-radius: 12px; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td { display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 10px 0 !important; border-bottom: none !important; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td:before { content: attr(data-title); font-weight: 700; color: #8A9499; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; text-align: left; flex: 0 0 auto; }
-		/* Product image: force visible block layout with explicit min-height. */
+		.woocommerce-cart .shop_table tbody tr.cart_item td { display: grid !important; grid-template-columns: 1fr 2fr; gap: 12px; align-items: start; padding: 10px 0 !important; border-bottom: none !important; text-align: left !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td:before { content: attr(data-title); font-weight: 700; color: #8A9499; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; padding-top: 2px; }
+		/* Product name TD spans full width, no label prefix (product name itself
+		   is the label). Variation list stacks vertically below the product name. */
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name { display: block !important; padding: 14px 0 !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name:before { content: '' !important; display: none !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name > a { font-size: 17px; font-weight: 700; color: #2C2C2C; text-decoration: none; display: block; margin-bottom: 8px; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation { font-size: 13px; color: #4a5d68; margin: 0; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation dt { font-weight: 600; color: #8A9499; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; margin-top: 6px; display: block; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation dd { margin: 0 0 4px 0; padding: 0; font-size: 14px; color: #2C2C2C; font-weight: 500; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation dd p { margin: 0; }
+		/* Product image: full-width centered block at the top of the card. */
 		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail { display: block !important; text-align: center !important; min-height: 140px; padding: 8px 0 16px !important; border-bottom: none !important; }
 		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail:before { content: '' !important; display: none !important; }
 		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail img,
 		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail a img,
 		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail .attachment-woocommerce_thumbnail { display: block !important; visibility: visible !important; max-width: 140px !important; width: 140px !important; height: auto !important; margin: 0 auto !important; border-radius: 10px; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td.actions { border-bottom: none !important; display: block; }
+		/* Price + Subtotal values: bold and slightly larger to stand out. */
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-price,
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-subtotal { font-size: 16px; font-weight: 700; color: #2C2C2C; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-remove { display: block !important; text-align: right !important; padding: 0 !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-remove:before { content: '' !important; display: none !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.actions { border-bottom: none !important; display: block !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.actions:before { content: '' !important; display: none !important; }
 		.woocommerce-cart .coupon { flex-direction: column; align-items: stretch; }
 		.woocommerce-cart .coupon input[name="coupon_code"] { min-width: 0; width: 100%; }
 		.woocommerce-cart .button[name="apply_coupon"],
@@ -358,31 +375,41 @@ add_filter( 'woocommerce_cart_totals_coupon_label', function( $label, $coupon ) 
 }, 10, 2 );
 
 /**
- * Strip the coupon description from the WC Checkout Block applied-coupons
- * display. Without this, the block UI renders "FREESHIPPINGFree shipping
- * coupon" as a single chip (the code in bold followed inline by the
- * description). Filtering the post_excerpt to empty during cart/checkout
- * rendering makes the block show only the code.
- *
- * Scoped to coupons applied to the cart so admin Coupons screen and other
- * contexts still show the description for editing.
+ * Strip the coupon description ("Free shipping coupon") from EVERY frontend
+ * rendering. WC stores it as post_excerpt on the shop_coupon CPT, and
+ * different display contexts (classic cart, checkout block, custom
+ * checkout markup by themes) all pull it via different filters. To cover
+ * them all reliably, filter the post_excerpt field for shop_coupon posts
+ * on frontend cart/checkout contexts.
  */
-add_filter( 'get_post_metadata', function( $metavalue, $object_id, $meta_key ) {
-	if ( $meta_key !== 'description' ) return $metavalue;
-	// only filter on frontend cart/checkout contexts
-	if ( ! function_exists( 'WC' ) || ! WC()->cart ) return $metavalue;
-	if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return $metavalue;
-	$post = get_post( $object_id );
-	if ( ! $post || $post->post_type !== 'shop_coupon' ) return $metavalue;
-	return '';
-}, 10, 3 );
-
-add_filter( 'the_excerpt', function( $excerpt ) {
-	if ( ! function_exists( 'WC' ) || ! WC()->cart ) return $excerpt;
+add_filter( 'get_the_excerpt', function( $excerpt, $post = null ) {
 	if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return $excerpt;
-	$post = get_post();
-	if ( $post && $post->post_type === 'shop_coupon' ) return '';
+	if ( ! $post ) $post = get_post();
+	if ( $post && isset( $post->post_type ) && $post->post_type === 'shop_coupon' ) return '';
 	return $excerpt;
+}, 10, 2 );
+
+/**
+ * Also filter the raw post object's post_excerpt accessor on coupon posts.
+ * Some checkout markup reads $coupon->get_description() which goes
+ * through this path. Returns empty so the customer never sees a
+ * description regardless of which display layer reads it.
+ */
+add_filter( 'woocommerce_coupon_get_description', function( $description, $coupon ) {
+	if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return $description;
+	return '';
+}, 10, 2 );
+
+/**
+ * Final fallback: directly clear post_excerpt on shop_coupon posts when
+ * they're fetched on frontend cart/checkout. This catches any code path
+ * that reads $post->post_excerpt directly without going through filters.
+ */
+add_action( 'the_post', function( $post ) {
+	if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
+	if ( isset( $post->post_type ) && $post->post_type === 'shop_coupon' ) {
+		$post->post_excerpt = '';
+	}
 }, 10, 1 );
 
 add_action( 'template_redirect', function() {
