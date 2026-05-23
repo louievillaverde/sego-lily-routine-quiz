@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.33
+ * Version:           1.13.34
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.33' );
+define( 'SLRQ_VERSION', '1.13.34' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -94,7 +94,7 @@ add_action( 'wp_head', function() {
 	.woocommerce-cart .coupon label { color: #4a5d68; font-size: 14px; margin-right: 8px; }
 	.woocommerce-cart .coupon input[name="coupon_code"] { padding: 10px 14px; border: 1px solid #B8A98C; border-radius: 6px; font-size: 15px; flex: 1; min-width: 180px; background: #ffffff; }
 	.woocommerce-cart .button[name="apply_coupon"],
-	.woocommerce-cart .button[name="update_cart"] { background: transparent !important; border: 1px solid #386174 !important; color: #386174 !important; padding: 10px 18px !important; font-family: Georgia, 'Times New Roman', serif !important; font-size: 14px; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; font-weight: 600; }
+	.woocommerce-cart .button[name="update_cart"] { background: transparent !important; border: 1px solid #386174 !important; color: #386174 !important; padding: 10px 18px !important; font-family: Georgia, 'Times New Roman', serif !important; font-size: 14px !important; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; font-weight: 600 !important; letter-spacing: 0.5px !important; text-transform: none !important; }
 	.woocommerce-cart .button[name="apply_coupon"]:hover,
 	.woocommerce-cart .button[name="update_cart"]:hover { background: #386174 !important; color: #ffffff !important; }
 
@@ -121,14 +121,19 @@ add_action( 'wp_head', function() {
 		.woocommerce-cart .shop_table tbody td { display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 8px 0 !important; border-bottom: 1px dashed #E8E2D6 !important; }
 		.woocommerce-cart .shop_table tbody td:last-child { border-bottom: none !important; }
 		.woocommerce-cart .shop_table tbody td:before { content: attr(data-title); font-weight: 700; color: #8A9499; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; text-align: left; flex: 0 0 auto; }
-		.woocommerce-cart .shop_table tbody td.product-thumbnail { justify-content: center; }
-		.woocommerce-cart .shop_table tbody td.product-thumbnail:before { content: ''; }
-		.woocommerce-cart .shop_table tbody td.product-thumbnail img { max-width: 140px; margin: 0 auto; }
+		/* Product image: force visible block layout with explicit min-height
+		   so the image slot doesn't collapse to a blank gap if WC Subs
+		   markup changes its DOM. img force-shown above the rest of the row. */
+		.woocommerce-cart .shop_table tbody td.product-thumbnail { display: block !important; text-align: center !important; min-height: 140px; padding: 8px 0 16px !important; border-bottom: 1px dashed #E8E2D6 !important; }
+		.woocommerce-cart .shop_table tbody td.product-thumbnail:before { content: '' !important; display: none !important; }
+		.woocommerce-cart .shop_table tbody td.product-thumbnail img,
+		.woocommerce-cart .shop_table tbody td.product-thumbnail a img,
+		.woocommerce-cart .shop_table tbody td.product-thumbnail .attachment-woocommerce_thumbnail { display: block !important; visibility: visible !important; max-width: 140px !important; width: 140px !important; height: auto !important; margin: 0 auto !important; border-radius: 10px; }
 		.woocommerce-cart .shop_table tbody tr.cart_item td.actions { border-bottom: none !important; display: block; }
 		.woocommerce-cart .coupon { flex-direction: column; align-items: stretch; }
 		.woocommerce-cart .coupon input[name="coupon_code"] { min-width: 0; width: 100%; }
 		.woocommerce-cart .button[name="apply_coupon"],
-		.woocommerce-cart .button[name="update_cart"] { width: 100%; }
+		.woocommerce-cart .button[name="update_cart"] { width: 100%; letter-spacing: 0.3px !important; }
 		.woocommerce-cart .cart_totals { padding: 20px; }
 	}
 	</style>
@@ -203,6 +208,28 @@ add_filter( 'pre_get_document_title', function( $title ) {
 }, 99 );
 
 /**
+ * Strip the WC Subscriptions "for X month/period" suffix on prices when
+ * the customer picked the "One-Time Purchase" variation. WC Subs appends
+ * the period string to every variable-subscription variation by default,
+ * even the one-time options, which confuses customers ("$36.00 for 1 month"
+ * reads like a recurring charge when it's actually a one-time order).
+ */
+add_filter( 'woocommerce_cart_item_price', function( $price_html, $cart_item, $cart_item_key ) {
+	if ( ! isset( $cart_item['variation'] ) || ! is_array( $cart_item['variation'] ) ) return $price_html;
+	$payment_opt = $cart_item['variation']['attribute_payment-options'] ?? '';
+	if ( stripos( $payment_opt, 'one-time' ) === false ) return $price_html;
+	// Strip " for 1 month" / " for N months" / " for N year" etc.
+	return preg_replace( '/\s*for\s+\d+\s+(month|months|year|years|week|weeks|day|days)/i', '', $price_html );
+}, 20, 3 );
+
+add_filter( 'woocommerce_cart_item_subtotal', function( $subtotal_html, $cart_item, $cart_item_key ) {
+	if ( ! isset( $cart_item['variation'] ) || ! is_array( $cart_item['variation'] ) ) return $subtotal_html;
+	$payment_opt = $cart_item['variation']['attribute_payment-options'] ?? '';
+	if ( stripos( $payment_opt, 'one-time' ) === false ) return $subtotal_html;
+	return preg_replace( '/\s*for\s+\d+\s+(month|months|year|years|week|weeks|day|days)/i', '', $subtotal_html );
+}, 20, 3 );
+
+/**
  * Auto-apply the FREESHIPPING coupon during the Memorial Day window so
  * customers don&rsquo;t have to type a code. Matches the announced offer
  * window (Sat 5/23 9am MT through Tue 5/26 11:59pm MT including the
@@ -230,17 +257,14 @@ add_action( 'woocommerce_before_calculate_totals', function( $cart ) {
 	if ( empty( $code ) ) return;
 	if ( method_exists( $cart, 'has_discount' ) && $cart->has_discount( $code ) ) return;
 
-	// Pre-validate so we don't trigger WC error notices on a cart that
-	// can't accept this coupon (e.g., WC Subscriptions blocks fixed-cart
-	// discounts on a renewal cart). If invalid, skip silently.
+	// Verify the coupon exists in WC before attempting to apply (cheap check
+	// that avoids errors if the code was deleted). DO NOT use
+	// WC_Discounts::is_coupon_valid here — it returns a WP_Error on
+	// variable-subscription carts even when the coupon would actually apply
+	// fine, silently blocking auto-apply for Holly's subscription products.
 	if ( class_exists( 'WC_Coupon' ) ) {
 		$coupon = new WC_Coupon( $code );
 		if ( ! $coupon->get_id() ) return;
-		if ( class_exists( 'WC_Discounts' ) ) {
-			$discounts = new WC_Discounts( $cart );
-			$is_valid  = $discounts->is_coupon_valid( $coupon );
-			if ( is_wp_error( $is_valid ) ) return;
-		}
 	}
 
 	// Snapshot notices before apply, restore after. This swallows any
