@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.39
+ * Version:           1.13.40
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.39' );
+define( 'SLRQ_VERSION', '1.13.40' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -134,36 +134,35 @@ add_action( 'wp_head', function() {
 	@media (max-width: 600px) {
 		.woocommerce-cart .entry-content { padding: 16px 12px 36px; }
 		.woocommerce-cart .shop_table thead { display: none; }
-		/* Card styling SCOPED to product rows only (.cart_item). The cart_totals
-		   table (Subtotal / Shipping / Total) doesn't get the boxed-card
-		   treatment so its internal shipping radios + change-address link
-		   render with standard WC layout. Layout pattern: GRID with label left
-		   (1fr) and value right (2fr) so long variation text never gets
-		   squished into a right-aligned single line. */
-		.woocommerce-cart .shop_table tbody tr.cart_item { display: block; margin-bottom: 14px; padding: 22px 18px; background: #F7F6F3; border: 1px solid #E8E2D6; border-radius: 12px; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td { display: grid !important; grid-template-columns: 1fr 2fr; gap: 12px; align-items: start; padding: 10px 0 !important; border-bottom: none !important; text-align: left !important; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td:before { content: attr(data-title); font-weight: 700; color: #8A9499; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; padding-top: 2px; }
-		/* Product name TD spans full width, no label prefix (product name itself
-		   is the label). Variation list stacks vertically below the product name. */
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name { display: block !important; padding: 14px 0 !important; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name:before { content: '' !important; display: none !important; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name > a { font-size: 17px; font-weight: 700; color: #2C2C2C; text-decoration: none; display: block; margin-bottom: 8px; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation { font-size: 13px; color: #4a5d68; margin: 0; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation dt { font-weight: 600; color: #8A9499; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; margin-top: 6px; display: block; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation dd { margin: 0 0 4px 0; padding: 0; font-size: 14px; color: #2C2C2C; font-weight: 500; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation dd p { margin: 0; }
-		/* Product image: full-width centered block at the top of the card. */
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail { display: block !important; text-align: center !important; min-height: 140px; padding: 8px 0 16px !important; border-bottom: none !important; }
+		/* Clean block layout for mobile cart cards. No grid, no internal
+		   dividers. Each section is a stacked block with a small label
+		   above and the value below. */
+		.woocommerce-cart .shop_table tbody tr.cart_item { display: block !important; margin-bottom: 16px !important; padding: 24px 18px !important; background: #F7F6F3 !important; border: 1px solid #E8E2D6 !important; border-radius: 12px !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td { display: block !important; width: 100% !important; padding: 10px 0 !important; border: none !important; text-align: left !important; box-sizing: border-box !important; float: none !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td:before { content: attr(data-title) !important; display: block !important; font-weight: 700 !important; color: #8A9499 !important; text-transform: uppercase !important; font-size: 11px !important; letter-spacing: 1px !important; margin-bottom: 6px !important; float: none !important; text-align: left !important; }
+		/* Remove icon (X) at top of card, no label. */
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-remove { text-align: right !important; padding: 0 0 8px !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-remove:before { content: '' !important; display: none !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-remove a { font-size: 22px !important; color: #B8A98C !important; text-decoration: none !important; }
+		/* Product image: centered, no label. */
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail { text-align: center !important; padding: 0 0 20px !important; }
 		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail:before { content: '' !important; display: none !important; }
 		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail img,
 		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail a img,
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail .attachment-woocommerce_thumbnail { display: block !important; visibility: visible !important; max-width: 140px !important; width: 140px !important; height: auto !important; margin: 0 auto !important; border-radius: 10px; }
-		/* Price + Subtotal values: bold and slightly larger to stand out. */
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-thumbnail .attachment-woocommerce_thumbnail { display: block !important; visibility: visible !important; max-width: 140px !important; width: 140px !important; height: auto !important; margin: 0 auto !important; border-radius: 10px !important; }
+		/* Product name: big bold title, then variation list stacked beneath. */
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name { padding: 0 0 16px !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name:before { content: '' !important; display: none !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name > a { font-size: 18px !important; font-weight: 700 !important; color: #2C2C2C !important; text-decoration: none !important; display: block !important; margin-bottom: 12px !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation { margin: 0 !important; padding: 0 !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation dt { font-weight: 700 !important; color: #8A9499 !important; text-transform: uppercase !important; font-size: 10px !important; letter-spacing: 0.8px !important; margin: 10px 0 2px 0 !important; padding: 0 !important; display: block !important; float: none !important; clear: both !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation dt:first-child { margin-top: 0 !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation dd { margin: 0 !important; padding: 0 !important; font-size: 14px !important; color: #2C2C2C !important; font-weight: 500 !important; display: block !important; float: none !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-name .variation dd p { margin: 0 !important; }
+		/* Price + Subtotal: bold value, larger, on its own line under the label. */
 		.woocommerce-cart .shop_table tbody tr.cart_item td.product-price,
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-subtotal { font-size: 16px; font-weight: 700; color: #2C2C2C; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-remove { display: block !important; text-align: right !important; padding: 0 !important; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td.product-remove:before { content: '' !important; display: none !important; }
-		.woocommerce-cart .shop_table tbody tr.cart_item td.actions { border-bottom: none !important; display: block !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.product-subtotal { font-size: 18px !important; font-weight: 700 !important; color: #2C2C2C !important; }
+		.woocommerce-cart .shop_table tbody tr.cart_item td.actions { padding: 0 !important; }
 		.woocommerce-cart .shop_table tbody tr.cart_item td.actions:before { content: '' !important; display: none !important; }
 		.woocommerce-cart .coupon { flex-direction: column; align-items: stretch; }
 		.woocommerce-cart .coupon input[name="coupon_code"] { min-width: 0; width: 100%; }
@@ -373,6 +372,33 @@ add_filter( 'woocommerce_cart_totals_coupon_label', function( $label, $coupon ) 
 	}
 	return $label;
 }, 10, 2 );
+
+/**
+ * One-shot: clear the FREESHIPPING coupon's post_excerpt (where WC stores
+ * the "description") directly in the database. The filter-based approach
+ * keeps missing code paths in custom themes and WC Store API responses;
+ * clearing the source data is the only 100%-reliable fix. Idempotent via
+ * the option flag so it only runs once per release version.
+ *
+ * Customer was seeing "FREESHIPPING Free shipping coupon" jammed together
+ * in the checkout coupon chip. After this runs, the description is empty
+ * and no display path has anything to render.
+ */
+add_action( 'admin_init', function() {
+	$flag_key = 'lprq_freeshipping_excerpt_cleared_v1';
+	if ( get_option( $flag_key ) ) return;
+	$coupon_codes = apply_filters( 'lprq_coupons_to_clear_description', array( 'freeshipping' ) );
+	foreach ( $coupon_codes as $code ) {
+		$post = get_page_by_path( $code, OBJECT, 'shop_coupon' );
+		if ( $post && ! empty( $post->post_excerpt ) ) {
+			wp_update_post( array(
+				'ID'           => $post->ID,
+				'post_excerpt' => '',
+			) );
+		}
+	}
+	update_option( $flag_key, time() );
+}, 100 );
 
 /**
  * Strip the coupon description ("Free shipping coupon") from EVERY frontend
