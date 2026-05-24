@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.41
+ * Version:           1.13.42
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.41' );
+define( 'SLRQ_VERSION', '1.13.42' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -125,21 +125,51 @@ add_action( 'wp_head', function() {
 	.woocommerce-cart .button[name="apply_coupon"]:hover,
 	.woocommerce-cart .button[name="update_cart"]:hover { background: #386174 !important; color: #ffffff !important; }
 
-	.woocommerce-cart .cart-collaterals,
-	.woocommerce-cart .cart_totals { background: #F7F6F3 !important; padding: 32px 28px !important; border-radius: 12px !important; border: 1px solid #E8E2D6 !important; margin-top: 28px !important; box-shadow: none !important; }
+	/* Cart totals container -- widen on desktop so internal label/value
+	   columns have room to breathe. .cart-collaterals is the parent
+	   wrapper WC uses; expanded width prevents the squish-wrap. */
+	.woocommerce-cart .cart-collaterals { width: 100% !important; max-width: 540px !important; float: none !important; margin: 28px 0 0 auto !important; }
+	.woocommerce-cart .cart-collaterals .cart_totals { width: 100% !important; float: none !important; }
+	.woocommerce-cart .cart_totals { background: #F7F6F3 !important; padding: 32px 32px !important; border-radius: 12px !important; border: 1px solid #E8E2D6 !important; margin-top: 28px !important; box-shadow: none !important; }
 	.woocommerce-cart .cart_totals h2 { font-family: Georgia, 'Times New Roman', serif; font-size: 22px; color: #2C2C2C; margin: 0 0 18px; font-weight: 600; }
-	.woocommerce-cart .cart_totals table { width: 100% !important; background: transparent !important; border-collapse: collapse !important; border: none !important; box-shadow: none !important; }
+	.woocommerce-cart .cart_totals table { width: 100% !important; background: transparent !important; border-collapse: collapse !important; border: none !important; box-shadow: none !important; table-layout: fixed !important; }
 	.woocommerce-cart .cart_totals table * { box-shadow: none !important; }
 	/* KILL all per-row borders inside cart_totals so no nested mini-boxes
-	   appear. Use only a single bottom-divider line between rows for
-	   readability, no row backgrounds or outlines. */
+	   appear. Single bottom-divider between rows for readability. */
 	.woocommerce-cart .cart_totals tr { background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; }
 	.woocommerce-cart .cart_totals th,
-	.woocommerce-cart .cart_totals td { padding: 14px 0 !important; border: none !important; border-bottom: 1px solid #E8E2D6 !important; background: transparent !important; box-shadow: none !important; outline: none !important; }
-	.woocommerce-cart .cart_totals th { color: #4a5d68; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; text-align: left; }
+	.woocommerce-cart .cart_totals td { padding: 14px 0 !important; border: none !important; border-bottom: 1px solid #E8E2D6 !important; background: transparent !important; box-shadow: none !important; outline: none !important; vertical-align: top !important; }
+	.woocommerce-cart .cart_totals th { color: #4a5d68; font-weight: 600; font-family: Georgia, 'Times New Roman', serif; text-align: left; width: 40% !important; padding-right: 16px !important; }
+	.woocommerce-cart .cart_totals td { width: 60% !important; text-align: right; word-wrap: break-word; }
 	.woocommerce-cart .cart_totals .order-total .amount { font-size: 22px; color: #2C2C2C; font-weight: 700; }
 	.woocommerce-cart .cart_totals tr:last-child th,
 	.woocommerce-cart .cart_totals tr:last-child td { border-bottom: none !important; }
+
+	/* ================================================================
+	   These styles apply ON ALL VIEWPORTS (not scoped to mobile).
+	   Previously these were inside the @media block, so desktop saw
+	   the WC defaults (Initial Shipment label, pink Change address
+	   link, awkward shipping radio layout). Now they apply everywhere.
+	   ================================================================ */
+
+	/* Shipping options: radio + label left-aligned in a clean list. */
+	.woocommerce-cart .cart_totals #shipping_method,
+	.woocommerce-cart .cart_totals .woocommerce-shipping-methods { list-style: none !important; padding: 0 !important; margin: 0 0 12px !important; }
+	.woocommerce-cart .cart_totals #shipping_method li,
+	.woocommerce-cart .cart_totals .woocommerce-shipping-methods li { display: flex !important; align-items: center !important; gap: 8px !important; padding: 4px 0 !important; text-align: left !important; margin: 0 !important; }
+	.woocommerce-cart .cart_totals #shipping_method li input[type="radio"] { margin: 0 !important; flex-shrink: 0 !important; }
+	.woocommerce-cart .cart_totals #shipping_method li label { margin: 0 !important; flex: 1 !important; text-align: left !important; font-weight: 500 !important; }
+	.woocommerce-cart .cart_totals .woocommerce-shipping-destination { margin: 12px 0 6px !important; font-size: 13px !important; color: #4a5d68 !important; text-align: left !important; }
+	/* Brand "Change address" / shipping-calculator link teal everywhere. */
+	.woocommerce-cart .cart_totals .shipping-calculator-button,
+	.woocommerce-cart .cart_totals .shipping-calculator-button-toggle,
+	.woocommerce-cart .cart_totals .shipping-calculator-form-wrapper a { color: #386174 !important; text-decoration: underline !important; font-size: 13px !important; }
+	/* Hide WC Subs "Initial Shipment:" / "Recurring Total:" label text;
+	   show "Shipping" instead. */
+	.woocommerce-cart .cart_totals tr.shipping > th,
+	.woocommerce-cart .cart_totals tr.recurring-total > th { font-size: 0 !important; line-height: 1 !important; }
+	.woocommerce-cart .cart_totals tr.shipping > th:before,
+	.woocommerce-cart .cart_totals tr.recurring-total > th:before { content: 'Shipping' !important; font-size: 13px !important; font-weight: 600 !important; color: #4a5d68 !important; text-transform: uppercase !important; letter-spacing: 1px !important; display: inline-block !important; line-height: 1.4 !important; }
 
 	.woocommerce-cart .wc-proceed-to-checkout { margin-top: 22px; padding: 0 !important; }
 	.woocommerce-cart .checkout-button,
@@ -190,30 +220,10 @@ add_action( 'wp_head', function() {
 		.woocommerce-cart .coupon input[name="coupon_code"] { min-width: 0; width: 100%; }
 		.woocommerce-cart .button[name="apply_coupon"],
 		.woocommerce-cart .button[name="update_cart"] { width: 100%; letter-spacing: 0.3px !important; }
-		.woocommerce-cart .cart_totals { padding: 20px; }
-		/* Cart totals rows -- shipping, subtotal, total -- keep standard
-		   table-row layout. No nested cards, no data-title flex. */
-		.woocommerce-cart .cart_totals .shop_table tbody tr { display: table-row !important; background: transparent !important; border: none !important; padding: 0 !important; margin: 0 !important; }
-		.woocommerce-cart .cart_totals .shop_table tbody td { display: table-cell !important; padding: 12px 0 !important; border-bottom: 1px solid #E8E2D6 !important; }
-		.woocommerce-cart .cart_totals .shop_table tbody td:before { content: none !important; }
-		/* Shipping options: radio + label left-aligned, no flex-space-between. */
-		.woocommerce-cart .cart_totals #shipping_method,
-		.woocommerce-cart .cart_totals .woocommerce-shipping-methods { list-style: none; padding: 0; margin: 0 0 12px; }
-		.woocommerce-cart .cart_totals #shipping_method li,
-		.woocommerce-cart .cart_totals .woocommerce-shipping-methods li { display: flex; align-items: center; gap: 8px; padding: 4px 0; text-align: left; margin: 0; }
-		.woocommerce-cart .cart_totals #shipping_method li input[type="radio"] { margin: 0; flex-shrink: 0; }
-		.woocommerce-cart .cart_totals #shipping_method li label { margin: 0; flex: 1; text-align: left; font-weight: 500; }
-		.woocommerce-cart .cart_totals .woocommerce-shipping-destination { margin: 8px 0 6px; font-size: 13px; color: #4a5d68; }
-		/* Brand the "Change address" / shipping-calculator link teal. */
-		.woocommerce-cart .cart_totals .shipping-calculator-button,
-		.woocommerce-cart .cart_totals .shipping-calculator-button-toggle { color: #386174 !important; text-decoration: underline; font-size: 13px; }
-		/* Hide WC Subs "Initial Shipment:" header text on one-time-leaning
-		   carts -- "Shipping" reads cleaner for retail customers who didn't
-		   pick a subscription variation. */
-		.woocommerce-cart .cart_totals tr.shipping th,
-		.woocommerce-cart .cart_totals tr.recurring-total th { font-size: 0 !important; }
-		.woocommerce-cart .cart_totals tr.shipping th:before,
-		.woocommerce-cart .cart_totals tr.recurring-total th:before { content: 'Shipping'; font-size: 12px !important; font-weight: 600; color: #4a5d68; text-transform: uppercase; letter-spacing: 1px; }
+		.woocommerce-cart .cart_totals { padding: 20px !important; }
+		.woocommerce-cart .cart-collaterals { max-width: 100% !important; margin: 20px 0 0 0 !important; }
+		.woocommerce-cart .cart_totals th { width: 45% !important; }
+		.woocommerce-cart .cart_totals td { width: 55% !important; }
 	}
 
 	/* Hide coupon description inline beside the code in WC Checkout Block /
