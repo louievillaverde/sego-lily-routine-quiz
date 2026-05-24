@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.44
+ * Version:           1.13.45
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.44' );
+define( 'SLRQ_VERSION', '1.13.45' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -84,7 +84,29 @@ add_filter( 'body_class', function( $classes ) {
  * the cart contents without horizontal scroll.
  */
 add_action( 'wp_head', function() {
-	if ( ! function_exists( 'is_cart' ) || ! is_cart() ) return;
+	if ( ! function_exists( 'is_cart' ) || ! function_exists( 'is_checkout' ) ) return;
+	if ( ! is_cart() && ! is_checkout() ) return;
+	$is_checkout = is_checkout() && ! is_cart();
+	if ( $is_checkout ) {
+		// Checkout-only fixes: payment method icon alignment, applied
+		// coupon chip styling, etc.
+		?>
+		<style>
+		/* Vertical-align all payment method icons on the same baseline.
+		   AmEx default SVG/PNG has different aspect ratio than VISA + MC
+		   so it floats higher without explicit alignment. */
+		.woocommerce-checkout .wc-block-components-payment-method-icons,
+		.woocommerce-checkout .wc-block-components-payment-method-label__icons,
+		.woocommerce-checkout .payment-method__icons,
+		.woocommerce-checkout .wc-block-checkout__payment-method-icons { display: flex !important; align-items: center !important; gap: 6px !important; flex-wrap: wrap !important; }
+		.woocommerce-checkout .wc-block-components-payment-method-icons img,
+		.woocommerce-checkout .wc-block-components-payment-method-label__icons img,
+		.woocommerce-checkout .payment-method__icons img,
+		.woocommerce-checkout .wc-block-checkout__payment-method-icons img { display: block !important; vertical-align: middle !important; height: 24px !important; width: auto !important; max-width: none !important; object-fit: contain !important; margin: 0 !important; }
+		</style>
+		<?php
+	}
+	if ( ! is_cart() ) return;
 	?>
 	<style>
 	/* Sego Lily cart page styling (injected by routine quiz plugin) */
