@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.49
+ * Version:           1.13.50
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.49' );
+define( 'SLRQ_VERSION', '1.13.50' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -126,21 +126,61 @@ add_action( 'wp_head', function() {
 	.woocommerce-terms-and-conditions-wrapper { margin-top: 16px !important; padding-top: 0 !important; font-size: 14px !important; line-height: 1.6 !important; color: #4a5d68 !important; }
 	.woocommerce-privacy-policy-text p,
 	.wc-block-checkout__terms p { font-size: 14px !important; line-height: 1.6 !important; margin: 0 0 10px !important; color: #4a5d68 !important; }
-	/* WC Block coupon chip "FREESHIPPINGFree shipping coupon" inline join.
-	   Hide the description span next to the code chip. Multiple selector
-	   variants to catch WC Block / WooPay rendering differences. */
-	.wc-block-components-totals-coupon-summary__chip-description,
-	.wc-block-components-totals-coupon-summary__chip-discount,
-	.wc-block-components-totals-coupon-summary__description,
-	.wc-block-coupon-code-applied__description,
-	.wc-block-components-totals-coupon__discount-rate,
-	.wc-block-components-totals-coupon__remove-link { white-space: nowrap !important; }
+	/* WC Block coupon chip "FREESHIPPINGFree shipping coupon" inline join. */
 	.wc-block-components-totals-coupon-summary__chip-description,
 	.wc-block-components-totals-coupon-summary__chip-discount,
 	.wc-block-components-totals-coupon-summary__description,
 	.wc-block-coupon-code-applied__description,
 	.wc-block-components-totals-coupon__discount-rate { display: none !important; }
+	.wc-block-components-totals-coupon__remove-link { white-space: nowrap !important; }
 	</style>
+	<script>
+	/* Hide non-selected shipping methods in TEXT SUMMARY displays where
+	   no <input> radio is present. CSS can't filter by text content so
+	   we do it in JS. Targets elements that contain BOTH "Free shipping"
+	   and "Flexible Shipping" as text strings -- typically the checkout
+	   review's Shipping Method summary -- and hides the line that's not
+	   the selected method.
+	   For the Memorial Day campaign window, "Free shipping" is always
+	   the auto-applied selection via the FREESHIPPING coupon. */
+	(function() {
+		function hideFlexible() {
+			// Common containers for shipping-method summaries in WC Block,
+			// Elementor WC builder, WooPay direct checkout.
+			var sel = '.wc-block-components-shipping-method-summary, [class*="shipping-method-summary"], [class*="ShippingMethodSummary"], .wc-block-checkout__shipping-method-summary, [data-block-name*="shipping"]';
+			var containers = document.querySelectorAll(sel);
+			// Fallback: scan all divs/lis whose direct children contain both
+			// shipping method strings.
+			if (!containers.length) {
+				containers = document.querySelectorAll('div, li, ul, section');
+			}
+			containers.forEach(function(c) {
+				var txt = (c.textContent || '');
+				if (!txt.match(/Flexible Shipping/i) || !txt.match(/Free shipping/i)) return;
+				// Walk through child nodes and elements; hide ones that contain
+				// "Flexible Shipping" but not "Free shipping" (the unselected line).
+				var children = c.querySelectorAll(':scope > *, :scope > * > *');
+				children.forEach(function(child) {
+					if (child.tagName === 'INPUT' || child.tagName === 'BUTTON') return;
+					var t = (child.textContent || '').trim();
+					if (t.length === 0) return;
+					if (/Flexible Shipping/i.test(t) && !/Free shipping/i.test(t) && t.length < 80) {
+						child.style.display = 'none';
+					}
+				});
+			});
+		}
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', hideFlexible);
+		} else {
+			hideFlexible();
+		}
+		// Re-run after a delay for WC Block React-rendered components that
+		// mount after initial DOMContentLoaded.
+		setTimeout(hideFlexible, 1000);
+		setTimeout(hideFlexible, 2500);
+	})();
+	</script>
 	<?php
 	if ( ! is_cart() ) return;
 	?>
@@ -299,8 +339,25 @@ add_action( 'wp_head', function() {
 		.woocommerce-cart .button[name="update_cart"] { width: 100%; letter-spacing: 0.3px !important; }
 		.woocommerce-cart .cart_totals { padding: 20px !important; }
 		.woocommerce-cart .cart-collaterals { max-width: 100% !important; margin: 20px 0 0 0 !important; }
-		.woocommerce-cart .cart_totals th { width: 45% !important; }
-		.woocommerce-cart .cart_totals td { width: 55% !important; }
+		/* Force the th/td columns to expand fully and right-align values
+		   against the right edge of the box. Without this the value
+		   column was the same width as its content, leaving empty space
+		   and making everything look centered. */
+		.woocommerce-cart .cart_totals table { width: 100% !important; }
+		.woocommerce-cart .cart_totals tbody tr,
+		.woocommerce-cart .cart_totals tbody tr * { text-align: left !important; }
+		.woocommerce-cart .cart_totals th { width: 40% !important; text-align: left !important; padding-right: 12px !important; }
+		.woocommerce-cart .cart_totals td,
+		.woocommerce-cart .cart_totals tbody td,
+		.woocommerce-cart .cart_totals td * { text-align: right !important; }
+		.woocommerce-cart .cart_totals td { width: 60% !important; }
+		/* Shipping methods inside the td: left-align (label reads naturally
+		   left), but keep the parent td right-aligned for other rows. */
+		.woocommerce-cart .cart_totals td #shipping_method,
+		.woocommerce-cart .cart_totals td .woocommerce-shipping-methods,
+		.woocommerce-cart .cart_totals td .woocommerce-shipping-destination,
+		.woocommerce-cart .cart_totals td .shipping-calculator-button,
+		.woocommerce-cart .cart_totals td #shipping_method * { text-align: left !important; }
 	}
 
 	/* Hide coupon description / WC default "Free shipping coupon" label
