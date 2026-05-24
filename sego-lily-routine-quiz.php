@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.46
+ * Version:           1.13.47
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.46' );
+define( 'SLRQ_VERSION', '1.13.47' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -103,6 +103,25 @@ add_action( 'wp_head', function() {
 		.woocommerce-checkout .wc-block-components-payment-method-label__icons img,
 		.woocommerce-checkout .payment-method__icons img,
 		.woocommerce-checkout .wc-block-checkout__payment-method-icons img { display: block !important; vertical-align: middle !important; height: 24px !important; width: auto !important; max-width: none !important; object-fit: contain !important; margin: 0 !important; }
+		/* Hide non-selected shipping methods on the checkout REVIEW step
+		   so customer sees only the method they picked, not the full list
+		   (cart page still shows all options). Targets WC Block + classic
+		   markup variations. Uses :has() selector for modern browsers. */
+		.woocommerce-checkout .wc-block-components-shipping-rates-control__package-item:not(:has(input:checked)),
+		.woocommerce-checkout-review-order .shipping_method li:not(.shipping-method-selected):not(:has(input:checked)),
+		.woocommerce-checkout #shipping_method li:not(.shipping-method-selected):not(:has(input:checked)),
+		.woocommerce-checkout-review-order tr.shipping ul#shipping_method li:not(:has(input:checked)) { display: none !important; }
+		/* Privacy notice ("Your personal data...") spacing + font matching.
+		   WC adds this at the end of checkout fields and the default
+		   styling often differs from preceding paragraph text. */
+		.woocommerce-checkout .woocommerce-privacy-policy-text,
+		.woocommerce-checkout .wc-block-checkout__terms,
+		.woocommerce-checkout .wc-block-checkout-terms,
+		.woocommerce-checkout .privacy-policy,
+		.woocommerce-checkout p.privacy,
+		.woocommerce-checkout .woocommerce-terms-and-conditions-wrapper { margin-top: 24px !important; padding-top: 16px !important; font-size: 14px !important; line-height: 1.6 !important; color: #4a5d68 !important; }
+		.woocommerce-checkout .woocommerce-privacy-policy-text p,
+		.woocommerce-checkout .wc-block-checkout__terms p { font-size: 14px !important; line-height: 1.6 !important; margin: 0 0 12px !important; color: #4a5d68 !important; }
 		</style>
 		<?php
 	}
