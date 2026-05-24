@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.45
+ * Version:           1.13.46
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.45' );
+define( 'SLRQ_VERSION', '1.13.46' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -187,11 +187,29 @@ add_action( 'wp_head', function() {
 	.woocommerce-cart .cart_totals .shipping-calculator-button-toggle,
 	.woocommerce-cart .cart_totals .shipping-calculator-form-wrapper a { color: #386174 !important; text-decoration: underline !important; font-size: 13px !important; }
 	/* Hide WC Subs "Initial Shipment:" / "Recurring Total:" label text;
-	   show "Shipping" instead. */
+	   show "Shipping" instead. (CSS fallback in case the gettext filter
+	   doesn't fire for the current rendering context.) */
 	.woocommerce-cart .cart_totals tr.shipping > th,
 	.woocommerce-cart .cart_totals tr.recurring-total > th { font-size: 0 !important; line-height: 1 !important; }
 	.woocommerce-cart .cart_totals tr.shipping > th:before,
 	.woocommerce-cart .cart_totals tr.recurring-total > th:before { content: 'Shipping' !important; font-size: 13px !important; font-weight: 600 !important; color: #4a5d68 !important; text-transform: uppercase !important; letter-spacing: 1px !important; display: inline-block !important; line-height: 1.4 !important; }
+
+	/* Coupon row Remove link: keep on one line, teal brand color. WC
+	   default pink color leaks from theme link styles. */
+	.woocommerce-cart .cart_totals a.woocommerce-remove-coupon,
+	.woocommerce-cart .cart_totals .woocommerce-remove-coupon,
+	.woocommerce-cart .cart_totals tr.cart-discount a,
+	.woocommerce-cart .cart_totals tr.coupon-freeshipping a { color: #386174 !important; white-space: nowrap !important; text-decoration: underline !important; font-weight: 600 !important; font-size: 13px !important; }
+
+	/* Change address link + shipping calculator + truck icon: teal brand color. */
+	.woocommerce-cart .cart_totals a.shipping-calculator-button,
+	.woocommerce-cart .cart_totals .shipping-calculator-button,
+	.woocommerce-cart .cart_totals .shipping-calculator-button-toggle,
+	.woocommerce-cart .cart_totals .shipping-calculator-form-wrapper a,
+	.woocommerce-cart .cart_totals .woocommerce-shipping-destination a,
+	.woocommerce-cart .cart_totals .woocommerce-shipping-calculator a { color: #386174 !important; text-decoration: underline !important; }
+	.woocommerce-cart .cart_totals a.shipping-calculator-button svg,
+	.woocommerce-cart .cart_totals a.shipping-calculator-button img { filter: hue-rotate(180deg) saturate(0) brightness(0.5) sepia(1) hue-rotate(155deg) !important; }
 
 	.woocommerce-cart .wc-proceed-to-checkout { margin-top: 22px; padding: 0 !important; }
 	.woocommerce-cart .checkout-button,
@@ -424,6 +442,30 @@ add_action( 'wp_loaded', function() {
 	}
 	WC()->cart->calculate_totals();
 }, 30 );
+
+/**
+ * Replace WC Subscriptions "Initial Shipment" / "Recurring Total" label
+ * text with just "Shipping". Variable-subscription products in cart cause
+ * WC Subs to wrap shipping labels with "Initial Shipment" prefix even
+ * when the customer picked the One-Time Purchase variation. The text
+ * is i18n-translated via WC Subs's text domain, so the gettext filter
+ * catches it regardless of where it's rendered (cart, checkout, etc.).
+ */
+add_filter( 'gettext', function( $translation, $text, $domain ) {
+	if ( $domain !== 'woocommerce-subscriptions' ) return $translation;
+	if ( $text === 'Initial Shipment' )           return 'Shipping';
+	if ( $text === 'Initial Shipment:' )          return 'Shipping:';
+	if ( $text === 'Recurring Total' )            return 'Recurring';
+	if ( $text === 'Recurring Total:' )           return 'Recurring:';
+	return $translation;
+}, 10, 3 );
+
+add_filter( 'gettext_with_context', function( $translation, $text, $context, $domain ) {
+	if ( $domain !== 'woocommerce-subscriptions' ) return $translation;
+	if ( $text === 'Initial Shipment' )           return 'Shipping';
+	if ( $text === 'Initial Shipment:' )          return 'Shipping:';
+	return $translation;
+}, 10, 4 );
 
 /**
  * Force WC to display the coupon CODE (e.g., "FREESHIPPING") instead of
