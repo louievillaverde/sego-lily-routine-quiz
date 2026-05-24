@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.42
+ * Version:           1.13.43
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.42' );
+define( 'SLRQ_VERSION', '1.13.43' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -128,7 +128,7 @@ add_action( 'wp_head', function() {
 	/* Cart totals container -- widen on desktop so internal label/value
 	   columns have room to breathe. .cart-collaterals is the parent
 	   wrapper WC uses; expanded width prevents the squish-wrap. */
-	.woocommerce-cart .cart-collaterals { width: 100% !important; max-width: 540px !important; float: none !important; margin: 28px 0 0 auto !important; }
+	.woocommerce-cart .cart-collaterals { width: 100% !important; max-width: 540px !important; float: none !important; margin: 28px auto 0 auto !important; }
 	.woocommerce-cart .cart-collaterals .cart_totals { width: 100% !important; float: none !important; }
 	.woocommerce-cart .cart_totals { background: #F7F6F3 !important; padding: 32px 32px !important; border-radius: 12px !important; border: 1px solid #E8E2D6 !important; margin-top: 28px !important; box-shadow: none !important; }
 	.woocommerce-cart .cart_totals h2 { font-family: Georgia, 'Times New Roman', serif; font-size: 22px; color: #2C2C2C; margin: 0 0 18px; font-weight: 600; }
