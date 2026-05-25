@@ -160,6 +160,59 @@ class SLRQ_Mautic {
 	}
 
 	/**
+	 * Authenticated GET to the Mautic API. Returns decoded JSON or null on error.
+	 * Used by the admin dashboard to render live campaign + email data.
+	 */
+	public static function api_get( $path, $timeout = 8 ) {
+		$creds = self::get_credentials();
+		if ( ! $creds ) {
+			return null;
+		}
+		$token = self::get_token( $creds );
+		if ( ! $token ) {
+			return null;
+		}
+		$url = $creds['url'] . '/' . ltrim( $path, '/' );
+		$resp = wp_remote_get( $url, array(
+			'timeout' => $timeout,
+			'headers' => array(
+				'Authorization' => 'Bearer ' . $token,
+				'Accept'        => 'application/json',
+				'User-Agent'    => self::USER_AGENT,
+			),
+		) );
+		if ( is_wp_error( $resp ) ) {
+			return null;
+		}
+		$code = wp_remote_retrieve_response_code( $resp );
+		if ( $code === 401 ) {
+			delete_transient( self::TOKEN_TRANSIENT );
+			$token = self::get_token( $creds );
+			if ( ! $token ) {
+				return null;
+			}
+			$resp = wp_remote_get( $url, array(
+				'timeout' => $timeout,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $token,
+					'Accept'        => 'application/json',
+					'User-Agent'    => self::USER_AGENT,
+				),
+			) );
+			if ( is_wp_error( $resp ) ) {
+				return null;
+			}
+		}
+		$body = wp_remote_retrieve_body( $resp );
+		return json_decode( $body, true );
+	}
+
+	public static function get_dashboard_base_url() {
+		$creds = self::get_credentials();
+		return $creds ? $creds['url'] : '';
+	}
+
+	/**
 	 * Fetch + cache OAuth2 token. 50-min TTL (Mautic tokens are 1 hour).
 	 */
 	private static function get_token( $creds ) {

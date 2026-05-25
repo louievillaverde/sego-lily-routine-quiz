@@ -698,6 +698,39 @@ class SLRQ_Quiz {
 
 		$recommendation = SLRQ_Recommendations::pair_for( $skin_concern, $frustration, $product_count, $firstname );
 
+		$rec_slug = '';
+		if ( is_array( $recommendation ) ) {
+			$rec_slug = (string) ( $recommendation['slug'] ?? $recommendation['key'] ?? $recommendation['id'] ?? '' );
+			if ( $rec_slug === '' && isset( $recommendation['products'] ) && is_array( $recommendation['products'] ) ) {
+				$slugs = array();
+				foreach ( $recommendation['products'] as $prod ) {
+					if ( is_array( $prod ) && ! empty( $prod['slug'] ) ) {
+						$slugs[] = $prod['slug'];
+					}
+				}
+				$rec_slug = implode( '+', $slugs );
+			}
+		}
+
+		$completion_id = 0;
+		if ( class_exists( 'SLRQ_Completions' ) ) {
+			$source_url = isset( $_SERVER['HTTP_REFERER'] ) ? esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '';
+			$user_ip    = '';
+			if ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
+				$user_ip = filter_var( wp_unslash( $_SERVER['REMOTE_ADDR'] ), FILTER_VALIDATE_IP ) ?: '';
+			}
+			$completion_id = SLRQ_Completions::store( array(
+				'email'               => $email,
+				'firstname'           => $firstname,
+				'skin_concern'        => $skin_concern,
+				'product_count'       => $product_count,
+				'frustration'         => $frustration,
+				'recommendation_slug' => $rec_slug,
+				'source_url'          => $source_url,
+				'user_ip'             => $user_ip,
+			) );
+		}
+
 		$mautic_result = SLRQ_Mautic::send_quiz_lead( array(
 			'email'         => $email,
 			'firstname'     => $firstname,
@@ -706,8 +739,17 @@ class SLRQ_Quiz {
 			'frustration'   => $frustration,
 		) );
 
+		if ( $completion_id && class_exists( 'SLRQ_Completions' ) ) {
+			SLRQ_Completions::mark_synced(
+				$completion_id,
+				! empty( $mautic_result['success'] ),
+				empty( $mautic_result['success'] ) ? (string) ( $mautic_result['message'] ?? '' ) : ''
+			);
+		}
+
 		// Quiz still succeeds for the user even if Mautic sync fails. They get
-		// their recommendation. We log the failure for the admin to address.
+		// their recommendation. The local completion record is the durable
+		// trail; re-sync from the admin dashboard if needed.
 		if ( ! $mautic_result['success'] ) {
 			error_log( '[LPRQ] Mautic sync failed for ' . $email . ': ' . $mautic_result['message'] );
 		}
@@ -720,6 +762,7 @@ class SLRQ_Quiz {
 			'frustration'     => $frustration,
 			'recommendation'  => $recommendation,
 			'mautic_synced'   => $mautic_result['success'],
+			'completion_id'   => $completion_id,
 		) );
 
 		wp_send_json_success( $recommendation );
