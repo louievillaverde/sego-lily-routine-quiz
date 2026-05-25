@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.13.50
+ * Version:           1.13.51
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.13.50' );
+define( 'SLRQ_VERSION', '1.13.51' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -133,54 +133,15 @@ add_action( 'wp_head', function() {
 	.wc-block-coupon-code-applied__description,
 	.wc-block-components-totals-coupon__discount-rate { display: none !important; }
 	.wc-block-components-totals-coupon__remove-link { white-space: nowrap !important; }
+	/* WC Block totals items (used by WC Block / WooPay checkout) -- force
+	   label-left + value-right layout. The flex container handles alignment
+	   without needing td widths. Catches cart_totals rendered as div+flex
+	   instead of classic table markup. */
+	.wc-block-components-totals-item { display: flex !important; justify-content: space-between !important; align-items: center !important; gap: 12px !important; }
+	.wc-block-components-totals-item__label { text-align: left !important; flex: 0 0 auto !important; }
+	.wc-block-components-totals-item__value,
+	.wc-block-components-totals-item__description { text-align: right !important; margin-left: auto !important; }
 	</style>
-	<script>
-	/* Hide non-selected shipping methods in TEXT SUMMARY displays where
-	   no <input> radio is present. CSS can't filter by text content so
-	   we do it in JS. Targets elements that contain BOTH "Free shipping"
-	   and "Flexible Shipping" as text strings -- typically the checkout
-	   review's Shipping Method summary -- and hides the line that's not
-	   the selected method.
-	   For the Memorial Day campaign window, "Free shipping" is always
-	   the auto-applied selection via the FREESHIPPING coupon. */
-	(function() {
-		function hideFlexible() {
-			// Common containers for shipping-method summaries in WC Block,
-			// Elementor WC builder, WooPay direct checkout.
-			var sel = '.wc-block-components-shipping-method-summary, [class*="shipping-method-summary"], [class*="ShippingMethodSummary"], .wc-block-checkout__shipping-method-summary, [data-block-name*="shipping"]';
-			var containers = document.querySelectorAll(sel);
-			// Fallback: scan all divs/lis whose direct children contain both
-			// shipping method strings.
-			if (!containers.length) {
-				containers = document.querySelectorAll('div, li, ul, section');
-			}
-			containers.forEach(function(c) {
-				var txt = (c.textContent || '');
-				if (!txt.match(/Flexible Shipping/i) || !txt.match(/Free shipping/i)) return;
-				// Walk through child nodes and elements; hide ones that contain
-				// "Flexible Shipping" but not "Free shipping" (the unselected line).
-				var children = c.querySelectorAll(':scope > *, :scope > * > *');
-				children.forEach(function(child) {
-					if (child.tagName === 'INPUT' || child.tagName === 'BUTTON') return;
-					var t = (child.textContent || '').trim();
-					if (t.length === 0) return;
-					if (/Flexible Shipping/i.test(t) && !/Free shipping/i.test(t) && t.length < 80) {
-						child.style.display = 'none';
-					}
-				});
-			});
-		}
-		if (document.readyState === 'loading') {
-			document.addEventListener('DOMContentLoaded', hideFlexible);
-		} else {
-			hideFlexible();
-		}
-		// Re-run after a delay for WC Block React-rendered components that
-		// mount after initial DOMContentLoaded.
-		setTimeout(hideFlexible, 1000);
-		setTimeout(hideFlexible, 2500);
-	})();
-	</script>
 	<?php
 	if ( ! is_cart() ) return;
 	?>
@@ -681,6 +642,44 @@ add_action( 'the_post', function( $post ) {
 		$post->post_excerpt = '';
 	}
 }, 10, 1 );
+
+/**
+ * Strip non-free shipping methods (e.g., Flexible Shipping) from the
+ * cart rates list during the Memorial Day campaign window. Customer
+ * only sees "Free shipping" + "Local pickup" as options. Removes the
+ * UX problem of two methods showing alongside each other on the checkout
+ * review screen. Local pickup stays available because that's a real
+ * option for nearby customers; only paid-shipping methods get stripped.
+ *
+ * Server-side filter beats the previous JS approach which caused
+ * flicker and scroll-jump because React kept re-rendering and the
+ * JS kept hiding -- DOM mutation on every reflow.
+ */
+add_filter( 'woocommerce_package_rates', function( $rates, $package ) {
+	$mt    = new DateTimeZone( 'America/Denver' );
+	$now   = new DateTime( 'now', $mt );
+	$start = new DateTime( '2026-05-23 09:00', $mt );
+	$end   = new DateTime( '2026-05-26 23:59', $mt );
+	if ( $now < $start || $now > $end ) return $rates;
+
+	foreach ( $rates as $key => $rate ) {
+		$method_id = is_object( $rate ) ? ( $rate->method_id ?? '' ) : '';
+		$label     = is_object( $rate ) ? ( $rate->label ?? '' ) : '';
+		// Keep free shipping + local pickup. Drop everything else
+		// (Flexible Shipping, Flat Rate, etc.) during the campaign.
+		$is_free_shipping  = ( $method_id === 'free_shipping' ) || ( stripos( $key, 'free_shipping' ) !== false );
+		$is_local_pickup   = ( $method_id === 'local_pickup' )  || ( stripos( $key, 'local_pickup' )  !== false );
+		$is_flexible_label = stripos( $label, 'flexible' ) !== false;
+		if ( ! $is_free_shipping && ! $is_local_pickup ) {
+			unset( $rates[ $key ] );
+			continue;
+		}
+		if ( $is_flexible_label ) {
+			unset( $rates[ $key ] );
+		}
+	}
+	return $rates;
+}, 100, 2 );
 
 add_action( 'template_redirect', function() {
 	if ( is_admin() && ! defined( 'DOING_AJAX' ) ) return;
