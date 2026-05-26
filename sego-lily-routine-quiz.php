@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.14.1
+ * Version:           1.14.2
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.14.1' );
+define( 'SLRQ_VERSION', '1.14.2' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -64,6 +64,39 @@ add_filter( 'lprq_signoff', function() {
 } );
 
 /**
+ * Detect whether the current request is from a wholesale customer or in
+ * a wholesale context. The routine quiz plugin's retail cart styling +
+ * shipping-rates filter should NOT fire for wholesale carts, since
+ * wholesale customers need their own shipping options (LTL, freight,
+ * etc.) and the wholesale plugin owns its own cart presentation.
+ */
+function lprq_is_wholesale_context() {
+	if ( is_user_logged_in() ) {
+		$user = wp_get_current_user();
+		foreach ( (array) $user->roles as $role ) {
+			if ( stripos( $role, 'wholesale' ) !== false ) {
+				return true;
+			}
+		}
+	}
+	if ( function_exists( 'WC' ) && WC()->cart ) {
+		foreach ( WC()->cart->get_cart() as $item ) {
+			if ( ! empty( $item['wholesale_priced'] ) ) {
+				return true;
+			}
+			if ( ! empty( $item['is_wholesale'] ) ) {
+				return true;
+			}
+		}
+	}
+	$uri = $_SERVER['REQUEST_URI'] ?? '';
+	if ( preg_match( '#/(wholesale|wholesale-portal|wholesale-order|sl-wholesale)(/|\?|$)#i', $uri ) ) {
+		return true;
+	}
+	return apply_filters( 'lprq_is_wholesale_context', false );
+}
+
+/**
  * Add a body class when an auto-applied coupon is on the cart, so the
  * cart-page JS can pre-populate the visible "Coupon code" input field
  * with the code. Without this, customers see an empty input even though
@@ -93,6 +126,9 @@ add_filter( 'body_class', function( $classes ) {
  */
 add_action( 'wp_head', function() {
 	if ( ! function_exists( 'is_cart' ) || ! function_exists( 'is_checkout' ) ) return;
+	// Wholesale customers get their own cart presentation; retail styling
+	// would only confuse the wholesale flow.
+	if ( lprq_is_wholesale_context() ) return;
 	$on_wc_page = is_cart() || is_checkout();
 	// Fallback: Holly's site redirects /checkout/ -> /cart/ (page-id-8)
 	// where the Elementor + WooPay direct-checkout block renders the
@@ -664,6 +700,11 @@ add_action( 'the_post', function( $post ) {
  * JS kept hiding -- DOM mutation on every reflow.
  */
 add_filter( 'woocommerce_package_rates', function( $rates, $package ) {
+	// Wholesale customers need their full shipping menu (LTL, freight,
+	// etc.). The retail campaign strip should never touch a wholesale cart.
+	if ( function_exists( 'lprq_is_wholesale_context' ) && lprq_is_wholesale_context() ) {
+		return $rates;
+	}
 	$mt    = new DateTimeZone( 'America/Denver' );
 	$now   = new DateTime( 'now', $mt );
 	$start = new DateTime( '2026-05-23 09:00', $mt );
@@ -696,6 +737,7 @@ add_action( 'template_redirect', function() {
 	if ( ! is_cart() && ! is_checkout() ) return;
 	if ( WC()->cart->is_empty() ) return;
 
+	if ( lprq_is_wholesale_context() ) return;
 	$mt    = new DateTimeZone( 'America/Denver' );
 	$now   = new DateTime( 'now', $mt );
 	$start = new DateTime( '2026-05-23 09:00', $mt );
