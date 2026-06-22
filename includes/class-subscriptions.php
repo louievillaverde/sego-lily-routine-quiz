@@ -69,6 +69,16 @@ class SLRQ_Subscriptions {
 			return;
 		}
 
+		// CRITICAL: Sego's products are variable-subscription, so a "One-Time
+		// Purchase" checkout is technically a 1-cycle subscription that fires
+		// these same status hooks. Those buyers are NOT recurring subscribers,
+		// they are exactly who the replenishment campaign should pitch. Only
+		// manage the subscriber tag for genuinely recurring subscriptions, or
+		// we would fence one-time buyers out of their own campaign.
+		if ( self::is_one_time( $subscription ) ) {
+			return;
+		}
+
 		// Leading-minus tags are removed by Mautic, so each path both sets the
 		// state it wants and clears the opposite state in one call.
 		$tags = $active
@@ -91,5 +101,33 @@ class SLRQ_Subscriptions {
 		}
 
 		do_action( 'slrq_subscriber_synced', $email, $active, $subscription );
+	}
+
+	/**
+	 * True when the subscription is really a single "One-Time Purchase" rather
+	 * than a recurring plan. Sego's products are variable-subscription, so the
+	 * one-time option is a 1-cycle subscription that still fires these status
+	 * hooks and even shows in the WC subscriptions endpoint. Detected from the
+	 * line-item variation, which is stable across the lifecycle (unlike
+	 * next_payment, which clears on cancel). Genuine recurring plans are the
+	 * 3 / 6 / 12 month subscribe-and-save variations.
+	 */
+	private static function is_one_time( $subscription ) {
+		if ( ! method_exists( $subscription, 'get_items' ) ) {
+			return false;
+		}
+		foreach ( $subscription->get_items() as $item ) {
+			if ( ! method_exists( $item, 'get_meta_data' ) ) {
+				continue;
+			}
+			foreach ( $item->get_meta_data() as $meta ) {
+				$data  = $meta->get_data();
+				$value = isset( $data['value'] ) ? $data['value'] : '';
+				if ( is_string( $value ) && preg_match( '/one.?time/i', $value ) ) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }

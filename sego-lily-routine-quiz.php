@@ -3,7 +3,7 @@
  * Plugin Name:       Organic Growth
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-organic-growth
  * Description:       Sego Lily organic growth engine: the /your-routine quiz that captures retail leads, Mautic sync with tags, subscriber tagging on WooCommerce subscriptions, and a results + campaigns dashboard. Internal slug stays sego-lily-routine-quiz so auto-updates and saved settings keep working.
- * Version:           1.14.6
+ * Version:           1.14.7
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.14.6' );
+define( 'SLRQ_VERSION', '1.14.7' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
