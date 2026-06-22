@@ -160,6 +160,102 @@ class SLRQ_Mautic {
 	}
 
 	/**
+	 * Upsert a Mautic contact by email and apply tags. Tags prefixed with a
+	 * leading minus are removed by Mautic (its native tag-removal syntax), so a
+	 * caller can add and remove in one call. Optional $fields sets standard
+	 * contact fields (firstname, etc.). Best-effort: returns a result array and
+	 * never throws, so a hook can fail quietly without breaking the request it
+	 * runs inside. Separate from send_quiz_lead so subscriber syncs do not pick
+	 * up the quiz-specific tags.
+	 */
+	public static function upsert_tags( $email, $tags, $fields = array() ) {
+		$creds = self::get_credentials();
+		if ( ! $creds ) {
+			return array( 'success' => false, 'message' => 'Mautic not configured.' );
+		}
+		$email = sanitize_email( $email );
+		if ( ! $email || ! is_email( $email ) ) {
+			return array( 'success' => false, 'message' => 'Invalid email.' );
+		}
+		$token = self::get_token( $creds );
+		if ( ! $token ) {
+			return array( 'success' => false, 'message' => 'Mautic auth failed.' );
+		}
+
+		$headers = array(
+			'Authorization' => 'Bearer ' . $token,
+			'Content-Type'  => 'application/json',
+			'Accept'        => 'application/json',
+			'User-Agent'    => self::USER_AGENT,
+		);
+
+		$search_url = $creds['url'] . '/api/contacts?search=' . rawurlencode( $email ) . '&limit=1';
+		$search     = wp_remote_get( $search_url, array( 'timeout' => 10, 'headers' => $headers ) );
+
+		if ( ! is_wp_error( $search ) && wp_remote_retrieve_response_code( $search ) === 401 ) {
+			delete_transient( self::TOKEN_TRANSIENT );
+			$token = self::get_token( $creds );
+			if ( ! $token ) {
+				return array( 'success' => false, 'message' => 'Mautic token refresh failed.' );
+			}
+			$headers['Authorization'] = 'Bearer ' . $token;
+			$search = wp_remote_get( $search_url, array( 'timeout' => 10, 'headers' => $headers ) );
+		}
+
+		if ( is_wp_error( $search ) ) {
+			return array( 'success' => false, 'message' => 'Contact search error: ' . $search->get_error_message() );
+		}
+
+		$contact_id  = null;
+		$search_body = json_decode( wp_remote_retrieve_body( $search ), true );
+		$contacts    = $search_body['contacts'] ?? array();
+		if ( ! empty( $contacts ) ) {
+			$contact_id = array_key_first( $contacts );
+		}
+
+		$contact_data = array(
+			'email' => $email,
+			'tags'  => array_values( array_unique( (array) $tags ) ),
+		);
+		if ( is_array( $fields ) ) {
+			foreach ( $fields as $k => $v ) {
+				if ( $v !== '' && $v !== null ) {
+					$contact_data[ $k ] = sanitize_text_field( $v );
+				}
+			}
+		}
+
+		if ( $contact_id ) {
+			$response = wp_remote_request( $creds['url'] . '/api/contacts/' . $contact_id . '/edit', array(
+				'method'  => 'PATCH',
+				'timeout' => 10,
+				'headers' => $headers,
+				'body'    => wp_json_encode( $contact_data ),
+			) );
+			$action = 'updated';
+		} else {
+			$response = wp_remote_post( $creds['url'] . '/api/contacts/new', array(
+				'timeout' => 10,
+				'headers' => $headers,
+				'body'    => wp_json_encode( $contact_data ),
+			) );
+			$action = 'created';
+		}
+
+		if ( is_wp_error( $response ) ) {
+			return array( 'success' => false, 'message' => 'Mautic ' . $action . ' error: ' . $response->get_error_message() );
+		}
+		$code = wp_remote_retrieve_response_code( $response );
+		if ( $code < 200 || $code >= 300 ) {
+			return array( 'success' => false, 'message' => 'Mautic HTTP ' . $code );
+		}
+
+		$body     = json_decode( wp_remote_retrieve_body( $response ), true );
+		$final_id = $body['contact']['id'] ?? $contact_id;
+		return array( 'success' => true, 'message' => 'Contact ' . $action, 'contact_id' => $final_id );
+	}
+
+	/**
 	 * Authenticated GET to the Mautic API. Returns decoded JSON or null on error.
 	 * Used by the admin dashboard to render live campaign + email data.
 	 */

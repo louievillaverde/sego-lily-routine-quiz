@@ -3,7 +3,7 @@
  * Plugin Name:       Routine Quiz
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
  * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.14.2
+ * Version:           1.14.3
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.14.2' );
+define( 'SLRQ_VERSION', '1.14.3' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -30,9 +30,11 @@ require_once SLRQ_PLUGIN_DIR . 'includes/class-quiz.php';
 require_once SLRQ_PLUGIN_DIR . 'includes/class-settings.php';
 require_once SLRQ_PLUGIN_DIR . 'includes/class-admin-dashboard.php';
 require_once SLRQ_PLUGIN_DIR . 'includes/class-updater.php';
+require_once SLRQ_PLUGIN_DIR . 'includes/class-subscriptions.php';
 
 add_action( 'plugins_loaded', array( 'SLRQ_Quiz', 'init' ) );
 add_action( 'plugins_loaded', array( 'SLRQ_Completions', 'install' ) );
+add_action( 'plugins_loaded', array( 'SLRQ_Subscriptions', 'init' ) );
 add_action( 'admin_init', array( 'SLRQ_Updater', 'init' ) );
 add_action( 'admin_init', array( 'SLRQ_Admin_Dashboard', 'handle_actions' ) );
 add_action( 'admin_menu', array( 'SLRQ_Admin_Dashboard', 'register_menu' ) );
