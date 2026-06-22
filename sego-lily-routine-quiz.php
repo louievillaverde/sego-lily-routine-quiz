@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:       Routine Quiz
+ * Plugin Name:       Organic Growth
  * Plugin URI:        https://github.com/louievillaverde/sego-lily-routine-quiz
- * Description:       Five-question quiz that captures retail leads, syncs to Mautic with tags, and shows each customer a 2-product recommendation from the Sego Lily line. Lives at /your-routine, auto-created on activation.
- * Version:           1.14.4
+ * Description:       Sego Lily organic growth engine: the /your-routine quiz that captures retail leads, Mautic sync with tags, subscriber tagging on WooCommerce subscriptions, and a results + campaigns dashboard. Internal slug stays sego-lily-routine-quiz so auto-updates and saved settings keep working.
+ * Version:           1.14.5
  * Author:            Lead Piranha
  * Author URI:        https://leadpiranha.com
  * License:           Proprietary
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SLRQ_VERSION', '1.14.4' );
+define( 'SLRQ_VERSION', '1.14.5' );
 define( 'SLRQ_PLUGIN_FILE', __FILE__ );
 define( 'SLRQ_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SLRQ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

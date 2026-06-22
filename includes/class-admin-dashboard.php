@@ -19,8 +19,8 @@ class SLRQ_Admin_Dashboard {
 
 	public static function register_menu() {
 		add_menu_page(
-			'Routine Quiz',
-			'Routine Quiz',
+			'Organic Growth',
+			'Organic Growth',
 			'manage_options',
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' ),
@@ -244,7 +244,7 @@ class SLRQ_Admin_Dashboard {
 		$page_id = $page ? (int) $page->ID : 0;
 		return array(
 			'id'         => 'sego-lily-routine-quiz',
-			'name'       => 'Routine Quiz',
+			'name'       => 'Organic Growth',
 			'url'        => home_url( '/your-routine' ),
 			'status'     => $page_id && $page->post_status === 'publish' ? 'live' : 'draft',
 			'created_at' => $page ? $page->post_date : null,
