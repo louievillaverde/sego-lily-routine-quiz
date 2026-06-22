@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 class SLRQ_Updater {
 
-	private static $github_repo  = 'louievillaverde/sego-lily-routine-quiz';
+	private static $github_repo  = 'louievillaverde/sego-lily-organic-growth';
 	private static $cache_key    = 'slrq_github_release';
 	private static $cache_ttl    = 43200;
 	private static $plugin_file  = 'sego-lily-routine-quiz/sego-lily-routine-quiz.php';
