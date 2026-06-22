@@ -280,7 +280,6 @@ class SLRQ_Admin_Dashboard {
 			</div>
 			<div class="slrq-actions">
 				<a class="slrq-btn slrq-btn-secondary" href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'page' => self::PAGE_SLUG, 'slrq_action' => 'export_csv' ), admin_url( 'admin.php' ) ), 'slrq_export_csv' ) ); ?>">Export CSV</a>
-				<a class="slrq-btn slrq-btn-ghost" href="<?php echo esc_url( admin_url( 'options-general.php?page=' . SLRQ_Settings::PAGE_SLUG ) ); ?>">Settings</a>
 			</div>
 		</div>
 
@@ -652,7 +651,7 @@ class SLRQ_Admin_Dashboard {
 	private static function render_tab_campaigns() {
 		$creds = SLRQ_Mautic::get_credentials();
 		if ( ! $creds ) {
-			echo '<div class="slrq-notice slrq-notice-error">Mautic is not configured, so live campaign data cannot be shown. Add credentials under <a class="slrq-link" href="' . esc_url( admin_url( 'options-general.php?page=' . SLRQ_Settings::PAGE_SLUG ) ) . '">Settings &rarr; Routine Quiz</a>.</div>';
+			echo '<div class="slrq-notice slrq-notice-error">Mautic is not configured, so live campaign data cannot be shown. Add Mautic credentials in the Sego Lily Wholesale plugin (Mautic settings); this plugin reads them automatically.</div>';
 			return;
 		}
 
